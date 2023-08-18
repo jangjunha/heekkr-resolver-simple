@@ -183,7 +183,6 @@ async def parse_library(root: Tag) -> tuple[Library, str | None]:
         children = elem.find_all("span", recursive=False)
         if len(children) >= 1:
             library_str = children[0].text.strip()
-            print(library_str)
             library = next(
                 lib for lib in await get_libraries() if lib.name == library_str
             )
