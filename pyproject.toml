@@ -13,6 +13,7 @@ aiodns = "^3.0.0"
 heekkr = {version = "0.0.3", source = "gar"}
 lxml = "^4.9.3"
 aiocache = "^0.12.2"
+aiostream = "^0.4.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.284"
