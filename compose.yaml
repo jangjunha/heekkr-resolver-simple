@@ -1,0 +1,11 @@
+services:
+  splib:
+    build: .
+    command: python run.py splib
+    ports:
+      - 9001:9001
+  gdlib:
+    build: .
+    command: python run.py gdlib
+    ports:
+      - 9002:9002
