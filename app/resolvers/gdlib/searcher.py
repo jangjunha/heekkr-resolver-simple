@@ -154,7 +154,6 @@ def parse_loan_status(root: Tag) -> HoldingStatus | None:
                 requests = None
 
             if m := DUE_PATTERN.search(bar_txt.text):
-                breakpoint()
                 year = int(m.group(1))
                 month = int(m.group(2))
                 day = int(m.group(3))
