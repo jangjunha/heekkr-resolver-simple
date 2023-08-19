@@ -29,3 +29,5 @@ RUN apt-get update && \
 
 COPY --from=builder /app/.venv/ /app/.venv/
 COPY . /app/
+
+EXPOSE 50051
