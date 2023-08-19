@@ -6,15 +6,16 @@ from aiocache import cached
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
 from heekkr.book_pb2 import Book, PublishDate
-from heekkr.common_pb2 import Date
-from heekkr.library_pb2 import Library
-from heekkr.resolver_pb2 import (
+from heekkr.common_pb2 import Date, DateTime
+from heekkr.holding_pb2 import (
     HoldingSummary,
-    SearchEntity,
+    HoldingStatus,
     AvailableStatus,
     UnavailableStatus,
     OnLoanStatus,
 )
+from heekkr.library_pb2 import Library
+from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
 
 
@@ -62,7 +63,6 @@ async def search(
     for li in soup.select("#contents ul.resultList > li:not(.emptyNote)"):
         isbn = parse_isbn(li)
         library, location = await parse_site(li)
-        status = parse_loan_status(li)
         yield SearchEntity(
             book=Book(
                 isbn=isbn,
@@ -76,18 +76,7 @@ async def search(
                     library_id=library.id,
                     location=location,
                     call_number=parse_call_number(li),
-                    is_available=type(status) is AvailableStatus,
-                    is_requested=(
-                        (type(status) is OnLoanStatus and status.waitings > 0)
-                        or (
-                            type(status) is UnavailableStatus
-                            and status.detail == "대출예약중"
-                        )
-                    ),
-                    requests=(
-                        status.waitings if (type(status) is OnLoanStatus) else None
-                    ),
-                    due=status.due if type(status) is OnLoanStatus else None,
+                    status=parse_loan_status(li),
                 )
             ],
         )
@@ -151,7 +140,7 @@ async def parse_site(root: Tag) -> tuple[Library, str | None]:
     return library, location_text
 
 
-def parse_loan_status(root: Tag):
+def parse_loan_status(root: Tag) -> HoldingStatus | None:
     if bar := root.select_one(".bookStateBar"):
         if bar_txt := bar.select_one("p.txt"):
             if b := bar_txt.select_one("b"):
@@ -169,7 +158,7 @@ def parse_loan_status(root: Tag):
                 year = int(m.group(1))
                 month = int(m.group(2))
                 day = int(m.group(3))
-                due = Date(year=year, month=month, day=day)
+                due = DateTime(date=Date(year=year, month=month, day=day))
             else:
                 due = None
         else:
@@ -182,17 +171,27 @@ def parse_loan_status(root: Tag):
             waiting_available = False
 
         if status_text.startswith("대출가능"):
-            return AvailableStatus(
-                detail=status_text.removeprefix("대출가능").strip("[]"),
+            return HoldingStatus(
+                available=AvailableStatus(
+                    detail=status_text.removeprefix("대출가능").strip("[]"),
+                )
             )
         if status_text.startswith("대출불가"):
             detail = status_text.removeprefix("대출불가").strip("[]")
             if detail == "대출중":
-                return OnLoanStatus(
-                    due=due, waitings=requests, waiting_available=waiting_available
+                return HoldingStatus(
+                    on_loan=OnLoanStatus(
+                        due=due,
+                    ),
+                    is_requested=requests > 0 if requests else False,
+                    requests=requests,
+                    requests_available=waiting_available,
                 )
             else:
-                return UnavailableStatus(detail=detail)
+                return HoldingStatus(
+                    unavailable=UnavailableStatus(detail=detail),
+                    is_requested=detail == "대출예약중",
+                )
     logging.warn("Cannot parse loan status")
 
 

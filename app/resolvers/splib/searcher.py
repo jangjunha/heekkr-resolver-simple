@@ -9,15 +9,16 @@ from aiocache import cached
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup, Tag
 from heekkr.book_pb2 import Book, PublishDate
-from heekkr.common_pb2 import Date
-from heekkr.library_pb2 import Library
-from heekkr.resolver_pb2 import (
+from heekkr.common_pb2 import Date, DateTime
+from heekkr.holding_pb2 import (
     HoldingSummary,
-    SearchEntity,
-    OnLoanStatus,
+    HoldingStatus,
     AvailableStatus,
     UnavailableStatus,
+    OnLoanStatus,
 )
+from heekkr.library_pb2 import Library
+from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
 
 
@@ -107,7 +108,6 @@ async def search(keyword: str, libraries: Iterable[str]) -> AsyncIterable[Search
         return
     for li in root.find_all("li", recursive=False):
         library, location = await parse_library(li)
-        status = parse_status(li)
         yield SearchEntity(
             book=Book(
                 isbn=parse_isbn(li),
@@ -121,16 +121,7 @@ async def search(keyword: str, libraries: Iterable[str]) -> AsyncIterable[Search
                     library_id=library.id,
                     location=location,
                     call_number=parse_call_number(li),
-                    is_available=type(status) is AvailableStatus,
-                    is_requested=(
-                        (type(status) is OnLoanStatus and status.waitings > 0)
-                        or (
-                            type(status) is UnavailableStatus
-                            and status.detail == "대출예약중"
-                        )
-                    ),
-                    requests=status.waitings if type(status) is OnLoanStatus else None,
-                    due=status.due if type(status) is OnLoanStatus else None,
+                    status=parse_status(li),
                 )
             ],
         )
@@ -207,26 +198,32 @@ def parse_call_number(root: Tag) -> str | None:
 
 def parse_status(
     root: Tag,
-) -> AvailableStatus | UnavailableStatus | OnLoanStatus | None:
+) -> HoldingStatus | None:
     if elem := root.select_one(".bookData .status"):
         text = elem.text.strip()
         if m := STATUS_PATTERN.match(text):
             status_text = m.group(1)
             detail = m.group(2)
             if status_text == "대출가능":
-                return AvailableStatus(detail=detail)
+                return HoldingStatus(available=AvailableStatus(detail=detail))
             if status_text == "대출불가":
                 if detail == "대출중":
                     waitings, waiting_available, due = parse_loan_status(root)
-                    return OnLoanStatus(
-                        waitings=waitings, waiting_available=waiting_available, due=due
+                    return HoldingStatus(
+                        on_loan=OnLoanStatus(due=due),
+                        is_requested=waitings > 0 if waitings else False,
+                        requests=waitings,
+                        requests_available=waiting_available,
                     )
                 else:
-                    return UnavailableStatus(detail=detail)
+                    return HoldingStatus(
+                        unavailable=UnavailableStatus(detail=detail),
+                        is_requested=detail == "대출예약중",
+                    )
     logger.warn("Cannot parse status")
 
 
-def parse_loan_status(root: Tag) -> tuple[int | None, bool, Date | None]:
+def parse_loan_status(root: Tag) -> tuple[int | None, bool, DateTime | None]:
     waitings = due = None
     waiting_available = False
     if elem := root.select_one(".bookData .book_info.info04"):
@@ -238,7 +235,9 @@ def parse_loan_status(root: Tag) -> tuple[int | None, bool, Date | None]:
                 waiting_available = waitings < max_waitings
         if len(children) >= 2:
             if m := DUE_PATTERN.match(children[1]):
-                due = Date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                due = DateTime(
+                    date=Date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                )
     return waitings, waiting_available, due
 
 
