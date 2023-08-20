@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 import re
 from typing import AsyncIterable, Iterable
 
@@ -90,6 +91,7 @@ async def search(
                     status=parse_loan_status(li),
                 )
             ],
+            url=parse_url(li),
         )
 
 
@@ -97,6 +99,24 @@ def parse_title(root: Tag) -> str | None:
     if elem := root.select_one(".tit > a"):
         return elem.text.strip()
     logger.warn("Cannot parse title")
+
+
+def parse_url(root: Tag) -> str | None:
+    if elem := root.select_one("a[href='#link']"):
+        if m := URL_PATTERN.search(elem.attrs["onclick"]):
+            parts = list(
+                urllib.parse.urlparse(
+                    "https://gdlibrary.or.kr/web/menu/10045/program/30003/searchResultDetail.do"
+                )
+            )
+            parts[4] = urllib.parse.urlencode(
+                {
+                    "recKey": m.group(1),
+                    "bookKey": m.group(2),
+                    "publishFormCode": m.group(3),
+                }
+            )
+            return urllib.parse.urlunparse(parts)
 
 
 def parse_author(root: Tag) -> str | None:
@@ -211,3 +231,6 @@ def parse_loan_status(root: Tag) -> HoldingStatus | None:
 
 REQUESTS_PATTERN = re.compile(r"\(예약[\:\s]*(\d+)명\)")
 DUE_PATTERN = re.compile(r"\(반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})\)")
+URL_PATTERN = re.compile(
+    r"fnSearchResultDetail\((\d+)\s*,\s*(\d+)\s*,\s*\'([\w\d]+)\'\)"
+)
