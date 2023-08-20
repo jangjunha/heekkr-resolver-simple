@@ -84,10 +84,11 @@ async def get_libraries() -> Iterable[Library]:
 
 
 async def search(keyword: str, libraries: Iterable[str]) -> AsyncIterable[SearchEntity]:
+    libraries_set = set(libraries)
     library_keys = [
         lib.search_key
         for lib in await get_library_configs()
-        if lib.library.id in libraries
+        if lib.library.id in libraries_set
     ]
     async with ClientSession() as session, session.post(
         "https://splib.or.kr/intro/menu/10003/program/30001/plusSearchResultList.do",
@@ -170,14 +171,23 @@ def parse_publish_date(root: Tag) -> PublishDate | None:
     logger.warn("Cannot parse publish date")
 
 
+def normalize_library(name: str) -> str:
+    if name == "송파돌마리도서관":
+        return "돌마리도서관"
+    return name
+
+
 async def parse_library(root: Tag) -> tuple[Library, str | None]:
     if elem := root.select_one(".bookData .book_info.info03"):
         children = elem.find_all("span", recursive=False)
         if len(children) >= 1:
-            library_str = children[0].text.strip()
-            library = next(
-                lib for lib in await get_libraries() if lib.name == library_str
-            )
+            library_str = normalize_library(children[0].text.strip())
+            try:
+                library = next(
+                    lib for lib in await get_libraries() if lib.name == library_str
+                )
+            except StopIteration:
+                raise RuntimeError("Unknown library_str")
         else:
             raise RuntimeError("Cannot parse library_str")
         if len(children) >= 2:
