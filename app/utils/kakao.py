@@ -15,9 +15,14 @@ class Kakao(contextlib.AsyncContextDecorator):
     def __init__(self) -> None:
         key = os.environ.get("KAKAO_API_KEY")
 
-        self.session = ClientSession(headers={"Authorization": f"KakaoAK {key}"})
+        self.session = (
+            ClientSession(headers={"Authorization": f"KakaoAK {key}"}) if key else None
+        )
 
     async def search_address(self, query: str) -> Address | None:
+        if not self.session:
+            return None
+
         async with self.session.get(
             "https://dapi.kakao.com/v2/local/search/address.json",
             params={
@@ -39,6 +44,9 @@ class Kakao(contextlib.AsyncContextDecorator):
         )
 
     async def search_keyword(self, keyword: str) -> Address | None:
+        if not self.session:
+            return None
+
         async with self.session.get(
             "https://dapi.kakao.com/v2/local/search/keyword.json",
             params={
@@ -61,4 +69,5 @@ class Kakao(contextlib.AsyncContextDecorator):
         return self
 
     async def __aexit__(self, *exc) -> None:
-        await self.session.close()
+        if self.session:
+            await self.session.close()
