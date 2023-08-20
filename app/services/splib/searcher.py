@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import functools
 import logging
 import re
 from typing import AsyncIterable, Iterable
@@ -22,6 +23,7 @@ from multidict import MultiDict
 
 from app.core import Coordinate, Library
 from app.utils.kakao import Kakao
+from app.utils.searcher import parse_url_base
 from app.utils.text import select_closest
 
 
@@ -146,7 +148,14 @@ async def search(keyword: str, libraries: Iterable[str]) -> AsyncIterable[Search
                     status=parse_status(li),
                 )
             ],
+            url=parse_url(li),
         )
+
+
+parse_url = functools.partial(
+    parse_url_base,
+    base_url="https://splib.or.kr/intro/menu/10003/program/30001/plusSearchResultDetail.do",
+)
 
 
 def parse_title(root: Tag) -> str | None:

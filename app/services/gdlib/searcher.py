@@ -1,5 +1,5 @@
+import functools
 import logging
-import urllib.parse
 import re
 from typing import AsyncIterable, Iterable
 
@@ -20,6 +20,7 @@ from multidict import MultiDict
 
 from app.core import Coordinate, Library
 from app.utils.kakao import Kakao
+from app.utils.searcher import parse_url_base
 from app.utils.text import select_closest
 
 
@@ -101,22 +102,10 @@ def parse_title(root: Tag) -> str | None:
     logger.warn("Cannot parse title")
 
 
-def parse_url(root: Tag) -> str | None:
-    if elem := root.select_one("a[href='#link']"):
-        if m := URL_PATTERN.search(elem.attrs["onclick"]):
-            parts = list(
-                urllib.parse.urlparse(
-                    "https://gdlibrary.or.kr/web/menu/10045/program/30003/searchResultDetail.do"
-                )
-            )
-            parts[4] = urllib.parse.urlencode(
-                {
-                    "recKey": m.group(1),
-                    "bookKey": m.group(2),
-                    "publishFormCode": m.group(3),
-                }
-            )
-            return urllib.parse.urlunparse(parts)
+parse_url = functools.partial(
+    parse_url_base,
+    base_url="https://gdlibrary.or.kr/web/menu/10045/program/30003/searchResultDetail.do",
+)
 
 
 def parse_author(root: Tag) -> str | None:
@@ -231,6 +220,3 @@ def parse_loan_status(root: Tag) -> HoldingStatus | None:
 
 REQUESTS_PATTERN = re.compile(r"\(예약[\:\s]*(\d+)명\)")
 DUE_PATTERN = re.compile(r"\(반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})\)")
-URL_PATTERN = re.compile(
-    r"fnSearchResultDetail\((\d+)\s*,\s*(\d+)\s*,\s*\'([\w\d]+)\'\)"
-)
