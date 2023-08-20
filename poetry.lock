@@ -580,13 +580,13 @@ protobuf = ["grpcio-tools (>=1.57.0)"]
 
 [[package]]
 name = "heekkr"
-version = "1.1.0"
+version = "1.2.0"
 description = ""
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "heekkr-1.1.0-py3-none-any.whl", hash = "sha256:19d3336de754c797008da9a2c54c193d96575b005dbcfc8cbfdac354356ae9fa"},
-    {file = "heekkr-1.1.0.tar.gz", hash = "sha256:83dbbed0714b3b2225d1fedf7178d08d7c8e59a06fb261b38c67ad5c172519e6"},
+    {file = "heekkr-1.2.0-py3-none-any.whl", hash = "sha256:1f6866828834666bd7d93565ae1e435cd9b3fbaa457d27649a7cc517306f1c4b"},
+    {file = "heekkr-1.2.0.tar.gz", hash = "sha256:498bb31634894e33f226e3c0e0135d2968bdb874c35433649be1a73531c9a702"},
 ]
 
 [package.dependencies]
@@ -1215,4 +1215,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "053948c4226c7df1b2c621d7fcd8aacde8e858944393be7348f7a6c2cea7042c"
+content-hash = "546885cb584e515650fb1a44ad341abca2eb612290601b1630341ad209479e44"

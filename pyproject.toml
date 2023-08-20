@@ -10,7 +10,7 @@ python = "^3.11"
 beautifulsoup4 = "^4.12.2"
 aiohttp = "^3.8.5"
 aiodns = "^3.0.0"
-heekkr = {version = "1.1.0", source = "gar"}
+heekkr = {version = "1.2.0", source = "gar"}
 lxml = "^4.9.3"
 aiocache = "^0.12.2"
 
