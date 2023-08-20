@@ -17,11 +17,11 @@ class Resolver(ResolverServicer):
         self, request: GetLibrariesRequest, context
     ) -> GetLibrariesResponse:
         return GetLibrariesResponse(
-            libraries=(
+            libraries=[
                 convert_library(library, name)
                 for name, service in services.items()
                 for library in await service.get_libraries()
-            )
+            ]
         )
 
     async def Search(
