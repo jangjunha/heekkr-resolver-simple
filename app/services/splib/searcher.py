@@ -127,7 +127,7 @@ async def search(keyword: str, libraries: Iterable[str]) -> AsyncIterable[Search
     if root is None:
         return
     for li in root.find_all("li", recursive=False):
-        if "noResultNote" in li["class"]:
+        if "noResultNote" in li.get("class", ()):
             continue
         library, location = await parse_library(li)
         yield SearchEntity(
