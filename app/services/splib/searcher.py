@@ -17,9 +17,10 @@ from heekkr.holding_pb2 import (
     UnavailableStatus,
     OnLoanStatus,
 )
-from heekkr.library_pb2 import Library
 from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
+
+from app.core import Library
 
 
 logger = logging.getLogger(__name__)

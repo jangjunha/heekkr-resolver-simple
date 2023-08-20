@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "heekkr-resolvers"
+name = "heekkr-resolver-simple"
 version = "0.1.0"
 description = ""
 authors = ["jangjunha <hi@jangjunha.me>"]
