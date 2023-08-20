@@ -19,6 +19,7 @@ from multidict import MultiDict
 
 from app.core import Coordinate, Library
 from app.utils.kakao import Kakao
+from app.utils.text import select_closest
 
 
 ID_PREFIX = "gdlib:"
@@ -146,7 +147,11 @@ async def parse_site(root: Tag) -> tuple[Library, str | None]:
             library_text = text.removeprefix("도서관:").strip()
         elif text.startswith("자료실:"):
             location_text = text.removeprefix("자료실:").strip()
-    library = next(lib for lib in await get_libraries() if lib.name == library_text)
+    if not library_text:
+        raise RuntimeError("Cannot find library")
+    library = select_closest(
+        [(lib, lib.name) for lib in await get_libraries()], library_text
+    )
     return library, location_text
 
 

@@ -22,6 +22,7 @@ from multidict import MultiDict
 
 from app.core import Coordinate, Library
 from app.utils.kakao import Kakao
+from app.utils.text import select_closest
 
 
 logger = logging.getLogger(__name__)
@@ -188,23 +189,15 @@ def parse_publish_date(root: Tag) -> PublishDate | None:
     logger.warn("Cannot parse publish date")
 
 
-def normalize_library(name: str) -> str:
-    if name == "송파돌마리도서관":
-        return "돌마리도서관"
-    return name
-
-
 async def parse_library(root: Tag) -> tuple[Library, str | None]:
     if elem := root.select_one(".bookData .book_info.info03"):
         children = elem.find_all("span", recursive=False)
         if len(children) >= 1:
-            library_str = normalize_library(children[0].text.strip())
-            try:
-                library = next(
-                    lib for lib in await get_libraries() if lib.name == library_str
-                )
-            except StopIteration:
-                raise RuntimeError("Unknown library_str")
+            library_str = children[0].text.strip()
+            library = select_closest(
+                [(lib, lib.name) for lib in await get_libraries()],
+                library_str,
+            )
         else:
             raise RuntimeError("Cannot parse library_str")
         if len(children) >= 2:
