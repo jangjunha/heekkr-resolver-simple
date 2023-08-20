@@ -1,4 +1,4 @@
-FROM python:3.11-slim as base
+FROM python:3.11-alpine as base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -14,21 +14,21 @@ WORKDIR /app/
 
 FROM base as builder
 
+RUN apk add --update --no-cache --virtual .build-deps \
+      libffi-dev g++ musl-dev
 RUN pip install poetry
+# RUN curl -sSL https://install.python-poetry.org | python
 
 COPY pyproject.toml poetry.lock /app/
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --only=main --no-root
+
+RUN apk del .build-deps
 
 
 FROM base as production
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends libstdc++6 && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache libstdc++
 
 COPY --from=builder /app/.venv/ /app/.venv/
 COPY . /app/
-
-EXPOSE 50051
-CMD ["python", "run.py"]
