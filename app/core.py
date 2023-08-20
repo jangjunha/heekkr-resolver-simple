@@ -32,3 +32,4 @@ def register_service(name: str) -> Callable[[type[Service]], type[Service]]:
 
 
 services: dict[str, Service] = {}
+from app.services import *  # noqa: E402, F403
