@@ -24,7 +24,12 @@ async def main():
         case "libraries":
             resp = await resolver.GetLibraries(GetLibrariesRequest(), None)
             for lib in resp.libraries:
-                print(f"{lib.id:16s} : {lib.name}")
+                coordinate = (
+                    f"({lib.coordinate.latitude:.6f}, {lib.coordinate.longitude:.6f})"
+                    if lib.coordinate
+                    else ""
+                )
+                print(f"{lib.id:16s} : {lib.name}  {coordinate}")
         case "search":
             async for res in resolver.Search(
                 SearchRequest(library_ids=args.library_ids, term=args.keyword),

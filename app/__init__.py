@@ -1,5 +1,6 @@
 from typing import AsyncIterable
 
+from heekkr.common_pb2 import LatLng
 from heekkr.resolver_pb2 import (
     GetLibrariesRequest,
     GetLibrariesResponse,
@@ -51,4 +52,9 @@ def convert_library(lib: ServiceLibrary, name: str) -> Library:
         id=lib.id,
         name=lib.name,
         resolver_id=f"simple:{name}",
+        coordinate=(
+            LatLng(latitude=lib.coordinate.latitude, longitude=lib.coordinate.longitude)
+            if lib.coordinate
+            else None
+        ),
     )

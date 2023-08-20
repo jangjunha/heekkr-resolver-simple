@@ -20,7 +20,8 @@ from heekkr.holding_pb2 import (
 from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
 
-from app.core import Library
+from app.core import Coordinate, Library
+from app.utils.kakao import Kakao
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class LibraryConfig:
 
 @cached(ttl=60 * 60 * 24)
 async def get_library_configs() -> list[LibraryConfig]:
-    async with ClientSession() as session:
+    async with ClientSession() as session, Kakao() as kakao:
         async with session.get(
             "https://splib.or.kr/intro/menu/10022/contents/40003/contents.do"
         ) as response:
@@ -60,9 +61,22 @@ async def get_library_configs() -> list[LibraryConfig]:
             else:
                 raise RuntimeError("Cannot parse library key")
 
-            libs.append((name, key, href))
+            coordinate = None
+            if address_elem := li.select_one(".bottom_box p:nth-child(1)"):
+                address_text = address_elem.text.strip()
+                if address := await kakao.search_address(address_text):
+                    coordinate = Coordinate(latitude=address.y, longitude=address.x)
+                elif address := await kakao.search_keyword(name):
+                    coordinate = Coordinate(latitude=address.y, longitude=address.x)
 
-        async def parse_library_index(name: str, key: str, href: str) -> LibraryConfig:
+            libs.append((name, key, href, coordinate))
+
+        async def parse_library_index(
+            name: str,
+            key: str,
+            href: str,
+            coordinate: Coordinate | None,
+        ) -> LibraryConfig:
             async with session.get(
                 urllib.parse.urljoin("https://splib.or.kr/", href)
             ) as response:
@@ -72,7 +86,10 @@ async def get_library_configs() -> list[LibraryConfig]:
                 "#mainSearchForm input[name=searchLibraryArr]"
             ):
                 search_key = lib_input.attrs["value"]
-                return LibraryConfig(search_key, Library(id=f"splib:{key}", name=name))
+                return LibraryConfig(
+                    search_key,
+                    Library(id=f"splib:{key}", name=name, coordinate=coordinate),
+                )
             else:
                 raise RuntimeError("Cannot parse library search key")
 

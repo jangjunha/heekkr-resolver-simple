@@ -17,7 +17,8 @@ from heekkr.holding_pb2 import (
 from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
 
-from app.core import Library
+from app.core import Coordinate, Library
+from app.utils.kakao import Kakao
 
 
 ID_PREFIX = "gdlib:"
@@ -32,11 +33,19 @@ async def get_libraries() -> list[Library]:
         text = await response.text()
     soup = BeautifulSoup(text, "lxml")
     res = []
-    for li in soup.select("#searchForm ul.searchCheckList li:not(.total)"):
-        name = li.text.strip()
-        if input := li.select_one("input[name='searchLibraryArr']"):
-            key = input.attrs["value"]
-            res.append(Library(id=f"{ID_PREFIX}{key}", name=name))
+    async with Kakao() as kakao:
+        for li in soup.select("#searchForm ul.searchCheckList li:not(.total)"):
+            name = li.text.strip()
+            if input := li.select_one("input[name='searchLibraryArr']"):
+                key = input.attrs["value"]
+                coordinate = None
+                if address := await kakao.search_keyword(
+                    name.replace("북카페:", "다독다독 "),
+                ):
+                    coordinate = Coordinate(latitude=address.y, longitude=address.x)
+                res.append(
+                    Library(id=f"{ID_PREFIX}{key}", name=name, coordinate=coordinate)
+                )
     return res
 
 

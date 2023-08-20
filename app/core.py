@@ -6,9 +6,16 @@ from heekkr.resolver_pb2 import SearchEntity
 
 
 @dataclasses.dataclass
+class Coordinate:
+    latitude: float
+    longitude: float
+
+
+@dataclasses.dataclass
 class Library:
     id: str
     name: str
+    coordinate: Coordinate | None = None
 
 
 class Service(metaclass=abc.ABCMeta):
