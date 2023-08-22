@@ -235,7 +235,7 @@ def parse_status(
         text = elem.text.strip()
         if m := STATUS_PATTERN.match(text):
             status_text = m.group(1)
-            detail = m.group(2)
+            detail = m.group(2).strip("()")
             if status_text == "대출가능":
                 return HoldingStatus(available=AvailableStatus(detail=detail))
             if status_text == "대출불가":
