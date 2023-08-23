@@ -3,6 +3,7 @@
 .github
 .dockerignore
 .gitignore
+tests/
 
 .idea
 .vscode
