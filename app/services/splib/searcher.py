@@ -261,14 +261,16 @@ def parse_loan_status(root: Tag) -> tuple[int | None, bool, DateTime | None]:
     if elem := root.select_one(".bookData .book_info.info04"):
         children = elem.find_all("span", recursive=False)
         if len(children) >= 1:
-            if m := HOLDING_PATTERN.match(children[0]):
+            if m := HOLDING_PATTERN.match(children[0].text):
                 waitings = int(m.group(1))
                 max_waitings = int(m.group(2))
                 waiting_available = waitings < max_waitings
         if len(children) >= 2:
-            if m := DUE_PATTERN.match(children[1]):
+            if m := DUE_PATTERN.match(children[1].text):
                 due = DateTime(
-                    date=Date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                    date=Date(
+                        year=int(m.group(1)), month=int(m.group(2)), day=int(m.group(3))
+                    )
                 )
     return waitings, waiting_available, due
 
