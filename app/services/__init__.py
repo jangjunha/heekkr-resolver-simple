@@ -5,4 +5,5 @@ from . import (
     splib,
     sblib,
     seoul_gangnam,
+    seoul_gwangjin,
 )
