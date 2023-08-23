@@ -13,6 +13,7 @@ aiodns = "^3.0.0"
 heekkr = {version = "1.2.0", source = "gar"}
 lxml = "^4.9.3"
 aiocache = "^0.12.2"
+aiostream = "^0.4.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.284"
@@ -31,6 +32,8 @@ priority = "explicit"
 
 [tool.ruff]
 target-version = "py311"
+[tool.ruff.extend-per-file-ignores]
+"tests/**/*.py" = ["E501"]
 
 [build-system]
 requires = ["poetry-core"]
