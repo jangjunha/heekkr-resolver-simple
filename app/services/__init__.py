@@ -7,4 +7,5 @@ from . import (
     seoul_gangnam,
     seoul_gwangjin,
     seoul_gwanak,
+    seoul_dongdaemun,
 )
