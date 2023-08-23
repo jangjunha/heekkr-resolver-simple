@@ -3,4 +3,5 @@
 from . import (
     gdlib,
     splib,
+    sblib,
 )
