@@ -153,6 +153,17 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "aiostream"
+version = "0.4.5"
+description = "Generator-based operators for asynchronous iteration"
+optional = false
+python-versions = "*"
+files = [
+    {file = "aiostream-0.4.5-py3-none-any.whl", hash = "sha256:25b7c2d9c83570d78c0ef5a20e949b7d0b8ea3b0b0a4f22c49d3f721105a6057"},
+    {file = "aiostream-0.4.5.tar.gz", hash = "sha256:3ecbf87085230fbcd9605c32ca20c4fb41af02c71d076eab246ea22e35947d88"},
+]
+
+[[package]]
 name = "async-timeout"
 version = "4.0.3"
 description = "Timeout context manager for asyncio programs"
@@ -1279,4 +1290,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "99436497105a267a67af9b91a60ef3a034c22f6bbf87cd042b92d9e9d343e180"
+content-hash = "f699e64454bb13d9a7b5e6620cd6e91a32c3505443922242bba77e9219c7d882"
