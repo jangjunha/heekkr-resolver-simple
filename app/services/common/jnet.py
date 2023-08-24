@@ -75,8 +75,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         ) as response:
             return await response.text()
 
-    @cached(ttl=60 * 60 * 24)
-    async def get_libraries(self) -> list[Library]:
+    async def _get_libraries(self) -> list[Library]:
         text = await self.get_libraries_response()
         soup = BeautifulSoup(text, "lxml")
         res = []
@@ -98,6 +97,10 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                         )
                     )
         return res
+
+    @cached(ttl=60 * 60 * 24)
+    async def get_libraries(self) -> list[Library]:
+        return await self._get_libraries()
 
     async def map_library_to_searchkey(self, library_id: str) -> str:
         return library_id.removeprefix(self.id_prefix)

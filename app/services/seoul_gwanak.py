@@ -1,6 +1,5 @@
 from typing import AsyncIterable, Iterable
 
-from aiocache import cached
 from bs4 import BeautifulSoup
 from heekkr.resolver_pb2 import SearchEntity
 
@@ -41,8 +40,7 @@ class Searcher(JnetSearcher):
     def transform_library_name_for_search(self, name: str) -> str:
         return f"서울시 관악구 {name}"
 
-    @cached(ttl=60 * 60 * 24)
-    async def get_libraries(self) -> list[Library]:
+    async def _get_libraries(self) -> list[Library]:
         text = await self.get_libraries_response()
         soup = BeautifulSoup(text, "lxml")
         res = []
