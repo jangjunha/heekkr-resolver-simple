@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import logging
 import pathlib
 import pickle
 
@@ -9,6 +10,7 @@ from app import Resolver
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", action="store_true")
 subparsers = parser.add_subparsers(title="command", dest="command", required=True)
 
 parser_libraries = subparsers.add_parser("libraries")
@@ -21,6 +23,9 @@ parser_search.add_argument("--export", type=pathlib.Path)
 
 async def main():
     args = parser.parse_args()
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     resolver = Resolver()
 
     match args.command:
