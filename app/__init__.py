@@ -40,11 +40,11 @@ class Resolver(ResolverServicer):
             *(
                 service.search(
                     request.term,
-                    (
+                    {
                         library_id
                         for library_id in library_ids
                         if library_id.startswith(f"{name}:")
-                    ),
+                    },
                 )
                 for name, service in services.items()
                 if name in service_ids

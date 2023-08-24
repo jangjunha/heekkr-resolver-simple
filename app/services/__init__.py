@@ -2,7 +2,7 @@
 
 from . import (
     gdlib,
-    splib,
+    seoul_songpa,
     sblib,
     seoul_gangnam,
     seoul_gwangjin,
