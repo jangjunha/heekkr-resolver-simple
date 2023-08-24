@@ -6,40 +6,40 @@ from app.core import Library, Service, register_service
 from app.services.common.jnet import JnetSearcher
 
 
-__all__ = ("SeoulGangnamService",)
+__all__ = ("SeoulMapoService",)
 
 
 class Searcher(JnetSearcher):
     @property
     def id_prefix(self) -> str:
-        return "seoul-gangnam:"
+        return "seoul-mapo:"
 
     @property
     def url_base(self) -> str:
-        return "https://library.gangnam.go.kr/"
+        return "https://mplib.mapo.go.kr/"
 
     @property
     def path_search_index(self) -> str:
-        return "/intro/menu/10003/program/30001/plusSearchSimple.do"
+        return "/mcl/MENU1039/PGM3007/plusSearchSimple.do"
 
     @property
     def path_search(self) -> str:
-        return "/intro/menu/10003/program/30001/plusSearchResultList.do"
+        return "/mcl/PGM3007/plusSearchResultList.do"
 
     @property
-    def path_export_text(self) -> str:
-        return "/kolaseek/search/exportTextBookList.do"
+    def path_export_excel(self) -> str:
+        return "/cmmn/exportExcelBookList.do"
 
     @property
     def path_book_detail(self) -> str:
-        return "/intro/menu/10003/program/30001/plusSearchResultDetail.do"
+        return "/mcl/MENU1039/PGM3007/plusSearchDetailView.do"
 
     def transform_library_name_for_search(self, name: str) -> str:
-        return f"서울시 강남구 {name}"
+        return f"서울시 마포구 {name}"
 
 
-@register_service("seoul-gangnam")
-class SeoulGangnamService(Service):
+@register_service("seoul-mapo")
+class SeoulMapoService(Service):
     def __init__(self) -> None:
         self.searcher = Searcher()
 

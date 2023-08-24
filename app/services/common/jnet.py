@@ -1,6 +1,7 @@
 import abc
 import logging
 import re
+from io import BytesIO
 from typing import AsyncIterable, Iterable
 import urllib.parse
 
@@ -18,6 +19,7 @@ from heekkr.holding_pb2 import (
 )
 from heekkr.resolver_pb2 import SearchEntity
 from multidict import MultiDict
+from openpyxl.reader.excel import load_workbook
 
 from app.core import Coordinate, Library
 from app.utils.kakao import Kakao
@@ -49,9 +51,12 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         ...
 
     @property
-    @abc.abstractmethod
-    def path_export(self) -> str:
-        ...
+    def path_export_text(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    def path_export_excel(self) -> str:
+        raise NotImplementedError()
 
     @property
     @abc.abstractmethod
@@ -122,7 +127,10 @@ class JnetSearcher(metaclass=abc.ABCMeta):
     ) -> AsyncIterable[SearchEntity]:
         text = await self.search_response(keyword, library_ids)
         soup = BeautifulSoup(text, "lxml")
-        results = soup.select("#contents ul.resultList > li:not(.emptyNote)")
+        results = soup.select(
+            "#contents ul.resultList > "
+            "li:not(.emptyNote):not(.noResultNote):not(.message)"
+        )
         if len(results) == 0:
             return
 
@@ -147,7 +155,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                             }
                         )
                 if books:
-                    async for entity in self.export_to_text(books):
+                    async for entity in self.export(books):
                         yield entity
                     return
 
@@ -174,21 +182,50 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                 url=self.parse_url(li),
             )
 
-    async def export_to_text_response(self, infos: Iterable[dict]) -> str:
+    async def export_to_text_response(self, infos: Iterable[dict]) -> str | None:
+        try:
+            path = self.path_export_text
+        except NotImplementedError:
+            return None
         async with ClientSession(self.url_base) as session, session.post(
-            self.path_export,
+            path,
             data=MultiDict(("check", info["id"]) for info in infos),
         ) as response:
-            return await response.text()
+            if response.ok:
+                return await response.text()
 
-    async def export_to_text(
+    async def export_to_excel_response(self, infos: Iterable[dict]) -> str | None:
+        try:
+            path = self.path_export_excel
+        except NotImplementedError:
+            return None
+        async with ClientSession(self.url_base) as session, session.get(
+            path,
+            params=[("check", info["id"]) for info in infos],
+        ) as response:
+            if response.ok:
+                ws = load_workbook(
+                    BytesIO(await response.content.read()), data_only=True
+                ).active
+                return ws.values
+
+    async def export(
         self,
         infos: Iterable[dict],
     ) -> AsyncIterable[SearchEntity]:
-        text = await self.export_to_text_response(infos)
+        header = None
+        if text := await self.export_to_text_response(infos):
+            header_text, *data_texts = text.splitlines()
+            header = header_text.split("\t")
+            data = [line.split("\t") for line in data_texts]
 
-        header_text, *data = text.splitlines()
-        header = header_text.split("\t")
+        if header is None:
+            if res := await self.export_to_excel_response(infos):
+                header, *data = res
+
+        if header is None:
+            logger.warning("Cannot export")
+            return
 
         def find_index(*candidates: Iterable[str]) -> int:
             for c in candidates:
@@ -205,8 +242,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         i_library = find_index("도서관")
         i_location = find_index("자료실")
 
-        for line, info in zip(data, infos):
-            parts = line.split("\t")
+        for parts, info in zip(data, infos):
 
             def get(i: int) -> str | None:
                 return parts[i] if parts[i] != "-" else None
@@ -391,5 +427,11 @@ class JnetSearcher(metaclass=abc.ABCMeta):
 REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명")
 DUE_PATTERN = re.compile(r"반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})")
 URL_PATTERN = re.compile(
-    r"fnSearchResultDetail\((\d+)\s*,\s*(\d+)\s*,\s*\'([\w\d]+)\'\)"
+    r"(?:fnSearchResultDetail|fnSearchDetailView)\("
+    r"(\d+)"
+    r"\s*,\s*"
+    r"(\d+)"
+    r"\s*,\s*"
+    r"\'([\w\d]+)\'"
+    r"\)"
 )

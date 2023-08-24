@@ -27,7 +27,7 @@ class Searcher(JnetSearcher):
         return "/web/menu/10045/program/30003/searchResultList.do"
 
     @property
-    def path_export(self) -> str:
+    def path_export_text(self) -> str:
         raise NotImplementedError()
 
     @property

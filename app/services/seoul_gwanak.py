@@ -31,7 +31,7 @@ class Searcher(JnetSearcher):
         return "/galib/menu/10003/program/30001/searchResultList.do"
 
     @property
-    def path_export(self) -> str:
+    def path_export_text(self) -> str:
         return "/kolaseek/search/exportTextBookList.do"
 
     @property

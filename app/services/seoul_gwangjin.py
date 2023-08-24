@@ -27,7 +27,7 @@ class Searcher(JnetSearcher):
         return "/gjinfo/menu/10036/program/30010/plusSearchResultList.do"
 
     @property
-    def path_export(self) -> str:
+    def path_export_text(self) -> str:
         return "/search/exportTextBookList.do"
 
     @property
