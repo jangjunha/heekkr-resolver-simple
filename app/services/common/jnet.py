@@ -63,6 +63,20 @@ class JnetSearcher(metaclass=abc.ABCMeta):
     def path_book_detail(self) -> str:
         ...
 
+    @property
+    def export_available(self) -> bool:
+        try:
+            _ = self.path_export_text
+            return True
+        except NotImplementedError:
+            pass
+        try:
+            _ = self.path_export_excel
+            return True
+        except NotImplementedError:
+            pass
+        return False
+
     def normalize_library_name(self, name: str) -> str:
         return name
 
@@ -75,15 +89,23 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         ) as response:
             return await response.text()
 
+    def _get_libraries_select_items(self, root: Tag) -> Iterable[Tag]:
+        return root.select("ul.searchCheckList li:not(.total)")
+
+    def _get_libraries_select_input(self, item: Tag) -> Tag | None:
+        return item.select_one("input[name='searchLibraryArr']")
+
     async def _get_libraries(self) -> list[Library]:
         text = await self.get_libraries_response()
         soup = BeautifulSoup(text, "lxml")
         res = []
         async with Kakao() as kakao:
-            for li in soup.select("ul.searchCheckList li:not(.total)"):
+            for li in self._get_libraries_select_items(soup):
                 name = self.normalize_library_name(li.text.strip())
-                if input := li.select_one("input[name='searchLibraryArr']"):
+                if input := self._get_libraries_select_input(li):
                     key = input.attrs["value"]
+                    if key == "ALL":
+                        continue
                     coordinate = None
                     if address := await kakao.search_keyword(
                         self.transform_library_name_for_search(name)
@@ -106,7 +128,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         return library_id.removeprefix(self.id_prefix)
 
     def search_query(self, keyword: str, library_keys: Iterable[str]) -> MultiDict:
-        return MultiDict(
+        query = MultiDict(
             [
                 ("searchType", "SIMPLE"),
                 ("searchKey", "ALL"),
@@ -114,6 +136,8 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                 *(("searchLibraryArr", key) for key in library_keys),
             ]
         )
+        logger.debug(f"search query {query!r}")
+        return query
 
     async def search_response(self, keyword: str, library_ids: Iterable[str]) -> str:
         library_search_keys = [
@@ -125,50 +149,54 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         ) as response:
             return await response.text()
 
+    def search_select_results(self, root: Tag) -> list[Tag]:
+        return root.select(
+            "#contents ul.resultList > "
+            "li:not(.emptyNote):not(.noResultNote):not(.message)"
+        )
+
     async def search(
         self, keyword: str, library_ids: Iterable[str]
     ) -> AsyncIterable[SearchEntity]:
         text = await self.search_response(keyword, library_ids)
         soup = BeautifulSoup(text, "lxml")
-        results = soup.select(
-            "#contents ul.resultList > "
-            "li:not(.emptyNote):not(.noResultNote):not(.message)"
-        )
+        results = self.search_select_results(soup)
+        logger.debug(f"search result length = {len(results)}")
         if len(results) == 0:
             return
 
         # Case #1
-        if btn_area := soup.select_one(".resultHead"):
-            if "목록저장" in btn_area.text:
-                books = []
-                for li in results:
-                    if book_id := self.parse_id(li):
-                        books.append(
-                            {
-                                "id": book_id,
-                                "args": {
-                                    "entity": {
-                                        "url": self.parse_url(li),
-                                    },
-                                    "book": {},
-                                    "holding_summary": {
-                                        "status": self.parse_loan_status(li),
-                                    },
+        if self.export_available:
+            books = []
+            for li in results:
+                if book_id := self.parse_id(li):
+                    books.append(
+                        {
+                            "id": book_id,
+                            "args": {
+                                "entity": {
+                                    "url": self.parse_url(li),
                                 },
-                            }
-                        )
-                if books:
-                    async for entity in self.export(books):
-                        yield entity
-                    return
+                                "book": {},
+                                "holding_summary": {
+                                    "status": self.parse_holding_status(
+                                        li
+                                    ),  # TODO: check parse_status
+                                },
+                            },
+                        }
+                    )
+            if books:
+                async for entity in self.export(books):
+                    yield entity
+                return
 
         # Fallback
         for li in results:
-            isbn = self.parse_isbn(li)
             library, location = await self.parse_site(li)
             yield SearchEntity(
                 book=Book(
-                    isbn=isbn,
+                    isbn=self.parse_isbn(li),
                     title=self.parse_title(li),
                     author=self.parse_author(li),
                     publisher=self.parse_publisher(li),
@@ -179,7 +207,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                         library_id=library.id,
                         location=location,
                         call_number=self.parse_call_number(li),
-                        status=self.parse_loan_status(li),
+                        status=self.parse_holding_status(li),
                     )
                 ],
                 url=self.parse_url(li),
@@ -239,7 +267,13 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         i_title = find_index("서명")
         i_author = find_index("저자")
         i_publisher = find_index("출판사", "발행자")
-        i_publish_year = find_index("출판년도", "출판연도", "발행년도", "발행연도")
+        i_publish_year = find_index(
+            "발행년",
+            "출판년도",
+            "출판연도",
+            "발행년도",
+            "발행연도",
+        )
         i_call_number = find_index("청구기호")
         i_isbn = find_index("ISBN", "표준번호(ISBN, ISSN)")
         i_library = find_index("도서관")
@@ -287,15 +321,12 @@ class JnetSearcher(metaclass=abc.ABCMeta):
     def parse_id(self, root: Tag) -> str | None:
         if elem := root.select_one("input[name='check']"):
             return elem.attrs["value"]
-
-    def parse_title(self, root: Tag) -> str | None:
-        if elem := root.select_one(".tit > a"):
-            return elem.text.strip()
-        logger.warn("Cannot parse title")
+        elif parts := (self.parse_id_from_url(root)):
+            return "^".join(parts)
 
     def parse_id_from_url(self, root: Tag) -> tuple[str, str, str] | None:
         for elem in root.select("a"):
-            if m := URL_PATTERN.search(elem.attrs["onclick"]):
+            if m := self.URL_PATTERN.search(elem.attrs["onclick"]):
                 return m.group(1), m.group(2), m.group(3)
 
     def parse_url(self, root: Tag) -> str | None:
@@ -315,15 +346,20 @@ class JnetSearcher(metaclass=abc.ABCMeta):
             )
             return urllib.parse.urlunparse(parts)
 
+    def parse_title(self, root: Tag) -> str | None:
+        if elem := root.select_one(".tit > a"):
+            return elem.text.strip()
+        logger.warning("Cannot parse title")
+
     def parse_author(self, root: Tag) -> str | None:
         if elem := root.select_one(".author > span:nth-child(1)"):
             return elem.text.removeprefix("저자 : ")
-        logger.warn("Cannot parse author")
+        logger.warning("Cannot parse author")
 
     def parse_publisher(self, root: Tag) -> str | None:
         if elem := root.select_one(".author > span:nth-child(2)"):
             return elem.text.removeprefix("발행자: ")
-        logger.warn("Cannot parse publisher")
+        logger.warning("Cannot parse publisher")
 
     def parse_publish_date(self, root: Tag) -> PublishDate | None:
         if elem := root.select_one(".author > span:nth-child(3)"):
@@ -331,10 +367,10 @@ class JnetSearcher(metaclass=abc.ABCMeta):
             try:
                 year = int(year_text)
             except ValueError:
-                logger.warn("Cannot parse publish year text")
+                logger.warning("Cannot parse publish year text")
                 return
             return PublishDate(year=year)
-        logger.warn("Cannot parse publish date")
+        logger.warning("Cannot parse publish date")
 
     def parse_isbn(self, root: Tag) -> str:
         for sp in root.select(".data > span"):
@@ -365,7 +401,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         )
         return library, location_text
 
-    def parse_loan_status(self, root: Tag) -> HoldingStatus | None:
+    def parse_holding_status(self, root: Tag) -> HoldingStatus | None:
         if bar := root.select_one(".bookStateBar"):
             if bar_txt := bar.select_one("p.txt"):
                 if b := bar_txt.select_one("b"):
@@ -373,12 +409,12 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                 else:
                     return
 
-                if m := REQUESTS_PATTERN.search(bar_txt.text):
+                if m := self.REQUESTS_PATTERN.search(bar_txt.text):
                     requests = int(m.group(1))
                 else:
                     requests = None
 
-                if m := DUE_PATTERN.search(bar_txt.text):
+                if m := self.DUE_PATTERN.search(bar_txt.text):
                     year = int(m.group(1))
                     month = int(m.group(2))
                     day = int(m.group(3))
@@ -386,7 +422,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                 else:
                     due = None
             else:
-                logging.warn("Cannot parse loan status - bar_txt")
+                logger.warning("Cannot parse loan status - bar_txt")
                 return
 
             if request_btn := bar.select_one(".stateArea .state.typeA"):
@@ -424,17 +460,16 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                         requests=requests,
                         requests_available=waiting_available,
                     )
-        logging.warn("Cannot parse loan status")
+        logger.warning("Cannot parse loan status")
 
-
-REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명")
-DUE_PATTERN = re.compile(r"반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})")
-URL_PATTERN = re.compile(
-    r"(?:fnSearchResultDetail|fnSearchDetailView)\("
-    r"(\d+)"
-    r"\s*,\s*"
-    r"(\d+)"
-    r"\s*,\s*"
-    r"\'([\w\d]+)\'"
-    r"\)"
-)
+    REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명")
+    DUE_PATTERN = re.compile(r"반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})")
+    URL_PATTERN = re.compile(
+        r"(?:fnSearchResultDetail|fnSearchDetailView)\("
+        r"(\d+)"
+        r"\s*,\s*"
+        r"(\d+)"
+        r"\s*,\s*"
+        r"\'([\w\d]+)\'"
+        r"\)"
+    )
