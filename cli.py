@@ -1,5 +1,7 @@
 import argparse
 import asyncio
+import pathlib
+import pickle
 
 from heekkr.resolver_pb2 import GetLibrariesRequest, SearchRequest
 
@@ -14,6 +16,7 @@ parser_libraries = subparsers.add_parser("libraries")
 parser_search = subparsers.add_parser("search")
 parser_search.add_argument("keyword")
 parser_search.add_argument("-l", "--library-ids", action="append", required=True)
+parser_search.add_argument("--export", type=pathlib.Path)
 
 
 async def main():
@@ -31,11 +34,16 @@ async def main():
                 )
                 print(f"{lib.id:16s} : {lib.name}  {coordinate}")
         case "search":
+            entities = []
             async for res in resolver.Search(
                 SearchRequest(library_ids=args.library_ids, term=args.keyword),
                 None,
             ):
                 print(res)
+                entities += res.entities
+            if args.export:
+                with open(args.export, "wb") as f:
+                    pickle.dump(entities, f)
 
 
 asyncio.run(main())
