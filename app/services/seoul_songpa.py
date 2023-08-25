@@ -4,13 +4,7 @@ from typing import AsyncIterable, Iterable
 
 from bs4 import Tag
 from heekkr.book_pb2 import PublishDate
-from heekkr.common_pb2 import DateTime, Date
-from heekkr.holding_pb2 import (
-    HoldingStatus,
-    AvailableStatus,
-    OnLoanStatus,
-    UnavailableStatus,
-)
+from heekkr.holding_pb2 import HoldingStatus
 from heekkr.resolver_pb2 import SearchEntity
 
 from app.core import Library, Service, register_service
@@ -125,89 +119,19 @@ class Searcher(JnetSearcher):
                 return children[2].text.strip()
         logger.warning("Cannot parse call number")
 
-    def parse_requests_available(self, root: Tag) -> bool:
-        for elem in root.select(".bookBtnWrap a"):
-            if onclick := elem.attrs.get("onclick"):
-                if "fnLoanReservationApplyProc" in onclick:
-                    return True
-        return False
-
-    def parse_loan_status(
-        self, root: Tag
-    ) -> tuple[int | None, int | None, DateTime | None]:
-        waitings = max_waitings = due = None
-        if elem := root.select_one(".bookData .book_info.info04"):
-            children = elem.find_all("span", recursive=False)
-            if len(children) >= 1:
-                if m := self.REQUESTS_PATTERN.match(children[0].text):
-                    waitings = int(m.group(1))
-                    max_waitings = int(m.group(2))
-            if len(children) >= 2:
-                if m := self.DUE_PATTERN.match(children[1].text):
-                    due = DateTime(
-                        date=Date(
-                            year=int(m.group(1)),
-                            month=int(m.group(2)),
-                            day=int(m.group(3)),
-                        )
-                    )
-        return waitings, max_waitings, due
-
-    def parse_holding_status(
-        self,
-        root: Tag,
-    ) -> HoldingStatus | None:
-        if elem := root.select_one(".bookData .status"):
-            text = elem.text.strip()
-            if m := self.STATUS_PATTERN.search(text):
-                status_text = m.group(1)
-                detail = m.group(2).strip("[]()")
-                requests_available = self.parse_requests_available(root)
-                waitings, _, due = self.parse_loan_status(root)
-                if status_text == "대출가능":
-                    return HoldingStatus(
-                        available=AvailableStatus(detail=detail),
-                        is_requested=waitings > 0 if waitings else False,
-                        requests=waitings,
-                        requests_available=requests_available,
-                    )
-                elif status_text == "대출불가":
-                    if detail == "대출중":
-                        return HoldingStatus(
-                            on_loan=OnLoanStatus(due=due),
-                            is_requested=waitings > 0 if waitings else False,
-                            requests=waitings,
-                            requests_available=requests_available,
-                        )
-                    else:
-                        return HoldingStatus(
-                            unavailable=UnavailableStatus(detail=detail),
-                            is_requested=detail == "대출예약중",
-                            requests=waitings,
-                            requests_available=requests_available,
-                        )
-                else:
-                    return HoldingStatus(
-                        unavailable=UnavailableStatus(detail=detail),
-                    )
-        logger.warning("Cannot parse status")
+    def parse_holding_status(self, root: Tag) -> HoldingStatus | None:
+        return self.parse_holding_status_type_b(root)
 
     TITLE_PATTERN = re.compile(r"\d+\.\s*(.*)")
     ISBN_PATTERN = re.compile(
         r"fnCollectionBookList\(\s*[\w']+\s*,\s*[\w']+\s*,\s*[\w']+\s*,\s*[\w']+\s*,\s*'(\d+)'\)"
     )
-    STATUS_PATTERN = re.compile(r"(\w+)\s*(\([\w\d\s]+\))?")
-    REQUESTS_PATTERN = re.compile(r"예약\s*\:\s*(\d+)명?\s*\/\s*(\d+)명")
     URL_PATTERN = re.compile(
-        r"(?:fnSearchResultDetail|fnDetail)\("
+        r"fnSearchResultDetail\("
         r"'?(\d+)'?"
         r"\s*,\s*"
         r"'?(\d+)'?"
         r"\s*,\s*"
-        r"(?:"
-        r"\'?\d+\'?"
-        r"\s*,\s*"
-        r")?"
         r"\'([\w\d]+)\'"
         r"\)"
     )

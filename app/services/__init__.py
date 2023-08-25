@@ -9,4 +9,5 @@ from . import (
     seoul_gwanak,
     seoul_dongdaemun,
     seoul_mapo,
+    seoul_seodaemun,
 )

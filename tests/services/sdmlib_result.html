@@ -1,0 +1,5044 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="서대문구립도서관">
+<meta name="description" content="서대문구립도서관 정보 및 도서검색 제공">
+<meta name="generator" content="jnet co. ltd.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="서대문구립도서관">
+<meta property="og:description" content="서대문구립도서관 정보 및 도서검색 제공">
+<meta property="og:image" content="/include/image/common/og.jpg">
+<meta property="og:url" content="https://lib.sdm.or.kr/">
+<link rel="canonical" href="https://lib.sdm.or.kr/">
+<title>서대문구립도서관</title>
+<link rel="shortcut icon" href="/include/image/common/ico_sns_favicon.png">
+<link rel="stylesheet" href="/include/js/jquery-ui.min.css">
+<link rel="stylesheet" href="/include/css/sub.css">
+<link rel="stylesheet" href="/include/js/swiper.min.css">
+<script src="/include/js/jquery-1.12.4.min.js"></script>
+<script src="/include/js/jquery-ui.min.js"></script>
+<script src="/include/js/jquery.tab.js"></script>
+<script src="/include/js/swiper.min.js"></script>
+<script src="/include/js/json2.min.js"></script>
+<script src="/include/js/gnb.js"></script>
+<script src="/include/js/default.js"></script>
+<script src="/include/js/layerPop.js"></script>
+<script src="/include/js/moment.min.js"></script>
+<script src="/include/js/moment-ko.js"></script>
+<script src="/include/booksearch/js/ui.js"></script>
+<!-- <script src="/include/js/jquery.newsticker.js"></script> -->
+<script src="/include/js/common.js"></script>
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+
+	
+	
+		<script>
+			$(function(){
+				eval("initMenu(1,1,1,0,0)");
+			});
+		</script>
+	
+
+
+<script src="/include/booksearch/js/alpasq.js"></script>
+<script>
+	$(function(){
+		$("#searchKeyword").keypress(fnSearchEnter);
+		$("#searchBtn").click(fnSearch);
+		$("#librarySearchBtn").click(fnLibrarySearch);
+		$("#sortListBtn").click(fnSortList);
+		$("#aggsSearchBtn").click(fnAggsSearch);
+		$("#aggsPubYearSearchBtn").click(fnAggsSearch);
+
+		$("#searchForm input[name=searchManageCode]").click(fnSearchLibraryAll);
+		$("#searchForm input[name=searchManageCodeArr]").click(fnSearchLibrary);
+		$(".languageContents ul li a").on("click", fnInputMultiLang);
+		$("#searchArticle").change(fnSearchArticleChange);
+
+		if($("#searchArticle option:selected").val() == 'SCORE') {
+			$("#searchForm select[name=searchOrder]").hide();
+		} else {
+			$("#searchForm select[name=searchOrder]").show();
+		}
+
+		$("#viewTypeList").click({type : "LIST"}, fnViewType);
+		$("#viewTypeCard").click({type : "CARD"}, fnViewType);
+
+		$("#excelBtn").click(fnExcel);
+	});
+
+	function fnSearch(){
+		var form = document.searchForm;
+		if(isEmpty(form.searchKeyword.value)){
+			alert("검색어를 입력하세요.")
+			form.searchKeyword.focus();
+			return false;
+		}
+		form.action="/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+		return false;
+	}
+
+	function fnSearchKeyword(keyword){
+		var form = document.searchForm;
+		form.searchKeyword.value = keyword;
+		form.action="/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+	}
+
+	function fnInputMultiLang(){
+		var form = document.searchForm;
+		form.searchKeyword.value = form.searchKeyword.value + $(this).text().trim();
+		return false;
+	}
+
+	function fnSearchLibraryAll(){
+		var form = document.searchForm;
+		if(form.searchManageCode.checked){
+			$("#searchForm input[name=searchManageCodeArr]").prop("checked", false);
+		}
+	}
+
+	function fnSearchLibrary(){
+		var form = document.searchForm;
+		if($("#searchForm input[name=searchManageCodeArr]").size() == $("#searchForm input[name=searchManageCodeArr]:checked").size()){
+			$("#searchForm input[name=searchManageCodeArr]").prop("checked", false);
+			form.searchManageCode.checked = true;
+		}else{
+			form.searchManageCode.checked = false;
+		}
+	}
+
+	function fnAutoComplete(){
+		var options = {
+			isSelectSubmit : true,
+			suggestRequestUrl : "/search/include/autoCompleteList.do",
+			submitForm : "#searchForm",
+			submitUrl : "/sdmlib/menu/10003/program/30001/searchResultList.do"
+		};
+		$.autoComplete("#searchForm #searchKeyword", "#atcBox", "#atcList", "#atcShowBtn", "#atcCloseBtn", "#atcToggleBtn", options);
+	}
+
+	function fnLibrarySearch(){
+		var form = document.paramForm;
+
+		if(isEmpty($("#searchKeyword").val())){
+			alert("검색어를 입력하세요.")
+			form.searchKeyword.focus();
+			return false;
+		}
+
+		if(document.searchForm.searchManageCode.checked){
+			form.searchManageCode.value = "ALL";
+			$("#paramForm input[name=searchManageCodeArr]").remove();
+		}else{
+			form.searchManageCode.value = "";
+			$("#paramForm input[name=searchManageCodeArr]").remove();
+			$("#searchForm input[name=searchManageCodeArr]:checked").each(function(){
+				$("#paramForm").append("<input type=\"hidden\" name=\"searchManageCodeArr\" value=\"" + $(this).val() + "\">")
+			});
+		}
+		form.action = "/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+		return false;
+	}
+
+	function fnSearchArticleChange(){
+		if($("#searchArticle option:selected").val() == 'SCORE') {
+			$("#searchForm select[name=searchOrder]").hide();
+		} else {
+			$("#searchForm select[name=searchOrder]").show();
+		}
+	}
+
+	function fnSortList(){
+		var form = document.paramForm;
+		form.searchArticle.value = $("#searchArticle").val();
+		form.searchOrder.value = $("#searchOrder").val();
+		form.searchDisplay.value = $("#searchDisplay").val();
+		form.action = "/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+		return false;
+	}
+
+	function fnAggsSearch(){
+		var formData = $('#searchForm').serialize();
+		$("#bookList").load("/search/include/aggsBookList.do", formData);
+	}
+
+	function fnAggsList(page){
+		var form = document.searchForm;
+		form.currentPageNo.value = page;
+		var formData = $('#searchForm').serialize();
+		$("#bookList").load("/search/include/aggsBookList.do", formData);
+	}
+
+	function fnViewType(event){
+		document.paramForm.viewType.value = event.data.type;
+		document.searchForm.viewType.value = event.data.type;
+		return false;
+	}
+
+	function fnMobileViewType(value){
+		var form = document.paramForm;
+		form.viewType.value = value;
+		form.viewType.value = value;
+		return false;
+	}
+
+	function fnList(page){
+		var form = document.paramForm;
+		form.currentPageNo.value = page;
+		form.action = "/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+	}
+
+
+	function fnSearchPubFormCode(pubFormCode){
+		var form = document.paramForm;
+		form.currentPageNo.value = 1;
+		form.searchPubFormCode.value = pubFormCode;
+		form.action = "/sdmlib/menu/10003/program/30001/searchResultList.do";
+		form.submit();
+	}
+
+	function fnDetail(bookKey, speciesKey, isbn, pubFormCode){
+		var form = document.paramForm;
+		form.bookKey.value = bookKey;
+		form.speciesKey.value = speciesKey;
+		form.isbn.value = isbn;
+		form.pubFormCode.value = pubFormCode;
+		form.action = "/sdmlib/menu/10003/program/30001/searchResultDetail.do";
+		form.submit();
+	}
+
+	function fnExcel(){
+		var form = document.paramForm;
+		form.action = "/search/searchResultListExcelDown.do";
+		form.target = "hiddenFrame";
+		form.submit();
+	}
+
+</script>
+</head>
+<body>
+<form name="paramForm" id="paramForm" method="get">
+	<input type="hidden" name="searchType" value="SIMPLE">
+	<input type="hidden" name="preSearchKeyword" value="불편한 편의점">
+	<input type="hidden" name="viewType" value="LIST">
+	<input type="hidden" name="searchKeyword" value="불편한 편의점">
+	<input type="hidden" name="searchPubFormCode" value="ALL">
+	<input type="hidden" name="currentPageNo" value="1">
+	<input type="hidden" name="searchDisplay" value="20">
+	<input type="hidden" name="searchArticle" value="SCORE">
+	<input type="hidden" name="searchOrder" value="ASC">
+	<input type="hidden" name="reSearchYn" value="N">
+	
+	<input type="hidden" name="searchManageCode" value="">
+	
+		<input type="hidden" name="searchManageCodeArr" value="MA">
+	
+	<input type="hidden" name="searchAdvSearchKeywordA" value="">
+	<input type="hidden" name="searchAdvSearchKeywordB" value="">
+	<input type="hidden" name="searchAdvSearchKeywordC" value="">
+	<input type="hidden" name="searchAdvSearchKeywordD" value="">
+	<input type="hidden" name="searchAdvContentsType" value="">
+	
+	<input type="hidden" name="searchAdvTitle" value="">
+	<input type="hidden" name="searchAdvAuthor" value="">
+	<input type="hidden" name="searchAdvPublisher" value="">
+	<input type="hidden" name="searchAdvIsbn" value="">
+	<input type="hidden" name="searchAdvIssn" value="">
+	<input type="hidden" name="searchAdvClassNo" value="">
+	<input type="hidden" name="searchAdvFromPubYear" value="">
+	<input type="hidden" name="searchAdvToPubYear" value="">
+	<input type="hidden" name="searchAdvTextLang" value="">
+	<input type="hidden" name="bookKey">
+	<input type="hidden" name="speciesKey">
+	<input type="hidden" name="isbn">
+	<input type="hidden" name="pubFormCode">
+</form>
+<!-- skip -->
+<ul class="skip">
+	<li><a href="#contentGroup">본문 바로가기</a></li>
+	<li><a href="#container">하위메뉴 바로가기</a></li>
+</ul>
+<!-- //skip -->
+<!-- wrap -->
+<div id="wrap">
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header id="header">
+	<a href="#back" id="blackBG"><span class="blind">이전으로 돌아가기</span></a>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- SNS 공유하기 -->
+<div class="snsFarmSubWrap">
+	<div class="snsFarmSub">
+		<p>공유하기</p>
+		<div id="snsGroupSub" class="snsListSub clearfix">
+			<a href="#sns1" id="mobileSnsShortUrl" onclick="fnShorturlCopy();" title="단축URL 복사하기" class="snsUrl"><span class="blind">단축URL</span></a>
+			<a href="#sns2" id="mobileSns2" onclick="javascript:fnShareKakaoStory('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="카카오스토리에 공유하기 새창열림" class="snsStory"><span class="blind">카카오스토리</span></a>
+			<a href="#sns3" id="mobileSns3" onclick="javascript:fnShareTwitter('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="트위터에 공유하기 새창열림" class="snsTwitter"><span class="blind">트위터</span></a>
+			<a href="#sns4" id="mobileSns4" onclick="javascript:fnShareFaceBook('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="페이스북에 공유하기 새창열림" class="snsFacebook"><span class="blind">페이스북</span></a>
+		</div>
+		<a href="#" id="snscloseBtn" class="closeBtn"><span class="blind">닫기</span></a>
+	</div>
+</div>
+<!-- //SNS 공유하기 -->
+<div id="snb">
+	<div class="siteUtilGroup">
+		<div id="siteMenu" class="siteMenu clearfix">
+			<ul class="clearfix">
+				
+					
+						<li class="login"><a href="/sdmlib/program/memberLogin.do?returnUrl=aHR0cHM6Ly9saWIuc2RtLm9yLmtyL3NkbWxpYi9tZW51LzEwMDAzL3Byb2dyYW0vMzAwMDEvc2VhcmNoUmVzdWx0TGlzdC5kbz9zZWFyY2hUeXBlPVNJTVBMRSZzZWFyY2hLZXl3b3JkPSVFQiVCNiU4OCVFRCU4RSVCOCVFRCU5NSU5QyslRUQlOEUlQjglRUMlOUQlOTglRUMlQTAlOTAmc2VhcmNoTWFuYWdlQ29kZUFycj1NQQ==">로그인</a></li>
+						<li class="joinus"><a href="/sdmlib/program/memberJoinIntro.do">회원가입</a></li>
+					
+					
+				
+				<li class="sitemap"><a href="/sdmlib/program/siteMap.do">사이트맵</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script src="/include/js/clipboard.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+
+	<div class="headerInner clearfix">
+		<h1 id="logo"><a href="/sdmlib/index.do"><span class="blind">서대문구립도서관</span></a></h1>
+		<a href="#topSearchForm" id="btnSearchTop" style="display: block;"><span class="blind">검색창열기</span></a>
+		<a href="#open" id="mobileIndexOpen" title="메뉴 열기"><span><i></i><i></i><i></i></span></a>
+	</div>
+	<nav id="gnbNav" class="gnbNav">
+		<div id="mobileIndexClose"><a href="#close"><span class="blind">메뉴 닫기</span></a></div>
+		<ul id="gnb" class="gnb">
+			<li id="gnb1">
+		<a href="/sdmlib/menu/10003/program/30001/searchSimple.do" ><span>자료검색</span></a>
+		<p class="gnbTit">자료검색</p>
+		<ul>
+				<li id="gnb1_1">
+						<a href="/sdmlib/menu/10003/program/30001/searchSimple.do" ><span>통합자료검색</span></a>
+						<ul class="MkSub">
+								<li id="gnb1_1_1">
+										<a href="/sdmlib/menu/10003/program/30001/searchSimple.do" ><span>통합검색</span></a>
+										</li>
+								<li id="gnb1_1_2">
+										<a href="/sdmlib/menu/10004/program/30002/searchDetail.do" ><span>상세검색</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb1_2">
+						<a href="/sdmlib/menu/10006/program/30003/searchKdc.do" ><span>자료탐색</span></a>
+						<ul class="MkSub">
+								<li id="gnb1_2_1">
+										<a href="/sdmlib/menu/10006/program/30003/searchKdc.do" ><span>KDC분류검색</span></a>
+										</li>
+								<li id="gnb1_2_2">
+										<a href="/sdmlib/menu/10007/program/30004/searchBookstore.do" ><span>카테고리별검색</span></a>
+										</li>
+								<li id="gnb1_2_3">
+										<a href="/sdmlib/menu/10009/program/30005/magazineList.do" ><span>정기간행물</span></a>
+										<ul class="MkTab">
+												<li id="gnb1_2_3_1"><a href="/sdmlib/menu/10009/program/30005/magazineList.do" ><span>간행물</span></a></li>
+												<li id="gnb1_2_3_2"><a href="/sdmlib/menu/10010/program/30006/newspaperList.do" ><span>신문</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb1_3">
+						<a href="/sdmlib/menu/10011/program/30007/accessionBookList.do" ><span>신착자료검색</span></a>
+						</li>
+				<li id="gnb1_4">
+						<a href="/sdmlib/menu/10013/program/30008/popularBookMonthList.do" ><span>인기도서</span></a>
+						<ul class="MkSub">
+								<li id="gnb1_4_1">
+										<a href="/sdmlib/menu/10013/program/30008/popularBookMonthList.do" ><span>월별 인기도서</span></a>
+										</li>
+								<li id="gnb1_4_2">
+										<a href="/sdmlib/menu/10014/program/30009/popularBookSubjectList.do" ><span>주제별 인기도서</span></a>
+										</li>
+								<li id="gnb1_4_3">
+										<a href="/sdmlib/menu/10015/program/30010/popularBookAgeList.do" ><span>연령별 인기도서</span></a>
+										</li>
+								<li id="gnb1_4_4">
+										<a href="/sdmlib/menu/10016/program/30011/libraryPopularBookList.do" ><span>공공도서관 인기도서</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb1_5">
+						<a href="/sdmlib/menu/10018/program/30012/recommendOrganList.do" ><span>추천도서</span></a>
+						<ul class="MkSub">
+								<li id="gnb1_5_1">
+										<a href="/sdmlib/menu/10018/program/30012/recommendOrganList.do" ><span>기관 추천도서</span></a>
+										</li>
+								<li id="gnb1_5_2">
+										<a href="/sdmlib/menu/10020/program/30013/recommendAwardList.do?gubun=0" ><span>문학수상작</span></a>
+										<ul class="MkTab">
+												<li id="gnb1_5_2_1"><a href="/sdmlib/menu/10020/program/30013/recommendAwardList.do?gubun=0" ><span>국내수상작</span></a></li>
+												<li id="gnb1_5_2_2"><a href="/sdmlib/menu/10021/program/30013/recommendAwardList.do?gubun=1" ><span>국외수상작</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb1_5_3">
+										<a href="/sdmlib/menu/10022/program/30014/curationList.do" ><span>사서 추천도서</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb1_6">
+						<a href="/sdmlib/menu/10177/contents/40047/contents.do" ><span>전자도서관</span></a>
+						<ul class="MkSub">
+								<li id="gnb1_6_1">
+										<a href="/sdmlib/menu/10177/contents/40047/contents.do" ><span>구독형 전자책</span></a>
+										</li>
+								<li id="gnb1_6_2">
+										<a href="/sdmlib/menu/10024/contents/40001/contents.do" ><span>소장형 전자책</span></a>
+										</li>
+								<li id="gnb1_6_3">
+										<a href="/sdmlib/menu/10176/contents/40046/contents.do" ><span>전자도서관</span></a>
+										</li>
+								<li id="gnb1_6_4">
+										<a href="/sdmlib/menu/10025/contents/40002/contents.do" ><span>오디오북</span></a>
+										</li>
+								<li id="gnb1_6_5">
+										<a href="/sdmlib/menu/10174/contents/40045/contents.do" ><span>전자잡지</span></a>
+										</li>
+								<li id="gnb1_6_6">
+										<a href="/sdmlib/menu/10026/contents/40003/contents.do" ><span>원문서비스</span></a>
+										</li>
+								<li id="gnb1_6_7">
+										<a href="/sdmlib/menu/10028/contents/40004/contents.do" ><span>해외학술지 문헌복사</span></a>
+										<ul class="MkTab">
+												<li id="gnb1_6_7_1"><a href="/sdmlib/menu/10028/contents/40004/contents.do" ><span>이용안내</span></a></li>
+												<li id="gnb1_6_7_2"><a href="/sdmlib/menu/10029/program/30053/foreignJournal.do" ><span>복사신청</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb1_6_8">
+										<a href="/sdmlib/menu/10030/contents/40044/contents.do" ><span>프레젠테이션 콘텐츠</span></a>
+										</li>
+								</ul>
+						</li>
+				</ul>
+		</li>
+<li id="gnb2">
+		<a href="/sdmlib/menu/10033/contents/40005/contents.do" ><span>이용안내</span></a>
+		<p class="gnbTit">이용안내</p>
+		<ul>
+				<li id="gnb2_1">
+						<a href="/sdmlib/menu/10033/contents/40005/contents.do" ><span>도서관소개</span></a>
+						<ul class="MkSub">
+								<li id="gnb2_1_1">
+										<a href="/sdmlib/menu/10033/contents/40005/contents.do" ><span>인사말</span></a>
+										</li>
+								<li id="gnb2_1_2">
+										<a href="/sdmlib/menu/10034/contents/40006/contents.do" ><span>미션·전략</span></a>
+										</li>
+								<li id="gnb2_1_3">
+										<a href="/sdmlib/menu/10035/contents/40007/contents.do" ><span>연혁</span></a>
+										</li>
+								<li id="gnb2_1_4">
+										<a href="/sdmlib/menu/10036/program/30015/organChart.do" ><span>조직/직원정보</span></a>
+										</li>
+								<li id="gnb2_1_5">
+										<a href="/sdmlib/menu/10037/contents/40008/contents.do" ><span>도서관지도</span></a>
+										</li>
+								<li id="gnb2_1_6">
+										<a href="/sdmlib/menu/10038/contents/40009/contents.do" ><span>협력도서관</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb2_2">
+						<a href="/sdmlib/menu/10041/contents/40010/contents.do" ><span>회원서비스</span></a>
+						<ul class="MkSub">
+								<li id="gnb2_2_1">
+										<a href="/sdmlib/menu/10041/contents/40010/contents.do" ><span>회원가입</span></a>
+										<ul class="MkTab">
+												<li id="gnb2_2_1_1"><a href="/sdmlib/menu/10041/contents/40010/contents.do" ><span>일반회원가입</span></a></li>
+												<li id="gnb2_2_1_2"><a href="/sdmlib/menu/10042/contents/40011/contents.do" ><span>책이음서비스가입</span></a></li>
+												<li id="gnb2_2_1_3"><a href="/sdmlib/menu/10043/contents/40012/contents.do" ><span>서울시민카드가입</span></a></li>
+												<li id="gnb2_2_1_4"><a href="/sdmlib/menu/10044/contents/40013/contents.do" ><span>SNS가입</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb2_2_2">
+										<a href="/sdmlib/menu/10045/contents/40014/contents.do" ><span>대출/반납/예약</span></a>
+										</li>
+								<li id="gnb2_2_3">
+										<a href="/sdmlib/menu/10046/contents/40015/contents.do" ><span>모바일서비스</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb2_3">
+						<a href="/sdmlib/menu/10049/contents/40016/contents.do" ><span>구립도서관</span></a>
+						<ul class="MkSub">
+								<li id="gnb2_3_1">
+										<a href="/sdmlib/menu/10049/contents/40016/contents.do" ><span>이진아기념도서관</span></a>
+										<ul class="MkTab">
+												<li id="gnb2_3_1_1"><a href="/sdmlib/menu/10049/contents/40016/contents.do" ><span>도서관정보</span></a></li>
+												<li id="gnb2_3_1_2"><a href="/sdmlib/menu/10050/program/30016/dataStatus.do?manageCd=MA" ><span>소장자료</span></a></li>
+												<li id="gnb2_3_1_3"><a href="/sdmlib/menu/10051/contents/40017/contents.do" ><span>위치 및 연락처</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb2_3_2">
+										<a href="/sdmlib/menu/10053/contents/40018/contents.do" ><span>남가좌새롬어린이도서관</span></a>
+										<ul class="MkTab">
+												<li id="gnb2_3_2_1"><a href="/sdmlib/menu/10053/contents/40018/contents.do" ><span>도서관정보</span></a></li>
+												<li id="gnb2_3_2_2"><a href="/sdmlib/menu/10054/program/30016/dataStatus.do?manageCd=MB" ><span>소장자료</span></a></li>
+												<li id="gnb2_3_2_3"><a href="/sdmlib/menu/10055/contents/40019/contents.do" ><span>위치 및 연락처</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb2_3_3">
+										<a href="/sdmlib/menu/10057/contents/40020/contents.do" ><span>홍은도담도서관</span></a>
+										<ul class="MkTab">
+												<li id="gnb2_3_3_1"><a href="/sdmlib/menu/10057/contents/40020/contents.do" ><span>도서관정보</span></a></li>
+												<li id="gnb2_3_3_2"><a href="/sdmlib/menu/10058/program/30016/dataStatus.do?manageCd=MC" ><span>소장자료</span></a></li>
+												<li id="gnb2_3_3_3"><a href="/sdmlib/menu/10059/contents/40021/contents.do" ><span>위치 및 연락처</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb2_4">
+						<a href="/sdmlib/menu/10060/program/30017/smallLibList.do" ><span>작은도서관</span></a>
+						</li>
+				<li id="gnb2_5">
+						<a href="/sdmlib/menu/10062/contents/40022/contents.do" ><span>스마트도서관</span></a>
+						<ul class="MkSub">
+								<li id="gnb2_5_1">
+										<a href="/sdmlib/menu/10062/contents/40022/contents.do" ><span>스마트도서관 이용안내</span></a>
+										</li>
+								</ul>
+						</li>
+				</ul>
+		</li>
+<li id="gnb3">
+		<a href="/sdmlib/menu/10066/contents/40023/contents.do" ><span>도서관서비스</span></a>
+		<p class="gnbTit">도서관서비스</p>
+		<ul>
+				<li id="gnb3_1">
+						<a href="/sdmlib/menu/10066/contents/40023/contents.do" ><span>상호대차서비스</span></a>
+						<ul class="MkSub">
+								<li id="gnb3_1_1">
+										<a href="/sdmlib/menu/10066/contents/40023/contents.do" ><span>책두레</span></a>
+										</li>
+								<li id="gnb3_1_2">
+										<a href="/sdmlib/menu/10067/contents/40024/contents.do" ><span>책바다</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb3_2">
+						<a href="/sdmlib/menu/10068/contents/40025/contents.do" ><span>희망도서 신청</span></a>
+						</li>
+				<li id="gnb3_3">
+						<a href="/sdmlib/menu/10072/contents/40026/contents.do" ><span>재택서비스</span></a>
+						<ul class="MkSub">
+								<li id="gnb3_3_1">
+										<a href="/sdmlib/menu/10072/contents/40026/contents.do" ><span>책나래</span></a>
+										</li>
+								<li id="gnb3_3_2">
+										<a href="/sdmlib/menu/10074/contents/40027/contents.do" ><span>서대문 책이요</span></a>
+										<ul class="MkTab">
+												<li id="gnb3_3_2_1"><a href="/sdmlib/menu/10074/contents/40027/contents.do" ><span>신청안내</span></a></li>
+												<li id="gnb3_3_2_2"><a href="/sdmlib/menu/10075/program/30020/bookDeliveryCalendar.do" ><span>서대문 책이요 신청</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb3_4">
+						<a href="/sdmlib/menu/10077/contents/40028/contents.do" ><span>북스타트</span></a>
+						<ul class="MkTab">
+								<li id="gnb3_4_1">
+										<a href="/sdmlib/menu/10077/contents/40028/contents.do" ><span>신청안내</span></a>
+										</li>
+								<li id="gnb3_4_2">
+										<a href="/sdmlib/menu/10078/program/30021/bookstartApply.do" ><span>꾸러미신청</span></a>
+										</li>
+								<li id="gnb3_4_3">
+										<a href="/sdmlib/menu/10079/program/30022/bookstartPlayCalendar.do" ><span>책놀이신청</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb3_5">
+						<a href="/sdmlib/menu/10081/contents/40029/contents.do" ><span>동화버스붕붕이</span></a>
+						<ul class="MkTab">
+								<li id="gnb3_5_1">
+										<a href="/sdmlib/menu/10081/contents/40029/contents.do" ><span>신청안내</span></a>
+										</li>
+								<li id="gnb3_5_2">
+										<a href="/sdmlib/menu/10082/program/30023/storyCalendar.do" ><span>신청하기</span></a>
+										</li>
+								</ul>
+						</li>
+				</ul>
+		</li>
+<li id="gnb4">
+		<a href="/sdmlib/menu/10085/bbs/20004/bbsPostList.do" ><span>참여마당</span></a>
+		<p class="gnbTit">참여마당</p>
+		<ul>
+				<li id="gnb4_1">
+						<a href="/sdmlib/menu/10085/bbs/20004/bbsPostList.do" ><span>문화강좌</span></a>
+						<ul class="MkSub">
+								<li id="gnb4_1_1">
+										<a href="/sdmlib/menu/10085/bbs/20004/bbsPostList.do" ><span>문화강좌소식</span></a>
+										</li>
+								<li id="gnb4_1_2">
+										<a href="/sdmlib/menu/10087/contents/40030/contents.do" ><span>문화강좌신청</span></a>
+										<ul class="MkTab">
+												<li id="gnb4_1_2_1"><a href="/sdmlib/menu/10087/contents/40030/contents.do" ><span>제3기 문화강좌</span></a></li>
+												<li id="gnb4_1_2_2"><a href="/sdmlib/menu/10088/program/30024/lectureList.do" ><span>강좌목록 및 신청</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb4_1_3">
+										<a href="/sdmlib/menu/10090/contents/40032/contents.do" ><span>강사지원</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb4_2">
+						<a href="/sdmlib/menu/10091/program/30025/eventList.do" ><span>도서관행사신청</span></a>
+						</li>
+				<li id="gnb4_3">
+						<a href="/sdmlib/menu/10095/program/30027/readingClubChart.do?manageCd=MA" ><span>독서동아리</span></a>
+						<ul class="MkSub">
+								<li id="gnb4_3_1">
+										<a href="/sdmlib/menu/10095/program/30027/readingClubChart.do?manageCd=MA" ><span>동아리안내</span></a>
+										<ul class="MkTab">
+												<li id="gnb4_3_1_1"><a href="/sdmlib/menu/10095/program/30027/readingClubChart.do?manageCd=MA" ><span>이진아기념도서관</span></a></li>
+												<li id="gnb4_3_1_2"><a href="/sdmlib/menu/10096/program/30027/readingClubChart.do?manageCd=MB" ><span>남가좌새롬어린이도서관</span></a></li>
+												<li id="gnb4_3_1_3"><a href="/sdmlib/menu/10097/program/30027/readingClubChart.do?manageCd=MC" ><span>홍은도담도서관</span></a></li>
+												<li id="gnb4_3_1_4"><a href="/sdmlib/menu/10172/program/30027/readingClubChart.do?manageCd=QQ" ><span>작은도서관</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb4_3_2">
+										<a href="/sdmlib/menu/10093/program/30026/readingClubList.do" ><span>동아리행사신청</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb4_4">
+						<a href="/sdmlib/menu/10103/contents/40034/contents.do" ><span>견학 및 대관</span></a>
+						<ul class="MkSub">
+								<li id="gnb4_4_1">
+										<a href="/sdmlib/menu/10103/contents/40034/contents.do" ><span>견학신청</span></a>
+										<ul class="MkTab">
+												<li id="gnb4_4_1_1"><a href="/sdmlib/menu/10103/contents/40034/contents.do" ><span>견학안내</span></a></li>
+												<li id="gnb4_4_1_2"><a href="/sdmlib/menu/10104/program/30029/visitCalendar.do" ><span>신청하기</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb4_4_2">
+										<a href="/sdmlib/menu/10106/contents/40035/contents.do" ><span>공간대관신청</span></a>
+										<ul class="MkTab">
+												<li id="gnb4_4_2_1"><a href="/sdmlib/menu/10106/contents/40035/contents.do" ><span>대관안내</span></a></li>
+												<li id="gnb4_4_2_2"><a href="/sdmlib/menu/10107/program/30030/facilityCalendar.do" ><span>신청하기</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb4_5">
+						<a href="/sdmlib/menu/10109/contents/40036/contents.do" ><span>서대문 책으로 축제</span></a>
+						<ul class="MkSub">
+								<li id="gnb4_5_1">
+										<a href="/sdmlib/menu/10109/contents/40036/contents.do" ><span>축제안내</span></a>
+										</li>
+								<li id="gnb4_5_2">
+										<a href="/sdmlib/menu/10110/program/30031/bookFestivalList.do" ><span>프로그램목록</span></a>
+										</li>
+								<li id="gnb4_5_3">
+										<a href="/sdmlib/menu/10111/bbs/20005/bbsPostList.do" ><span>축제갤러리</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb4_6">
+						<a href="/sdmlib/menu/10112/program/30032/oneBookCurationDetail.do" ><span>한 도서관 한 책 읽기</span></a>
+						</li>
+				</ul>
+		</li>
+<li id="gnb5">
+		<a href="/sdmlib/menu/10115/bbs/20001/bbsPostList.do" ><span>정보마당</span></a>
+		<p class="gnbTit">정보마당</p>
+		<ul>
+				<li id="gnb5_1">
+						<a href="/sdmlib/menu/10115/bbs/20001/bbsPostList.do" ><span>도서관소식</span></a>
+						<ul class="MkSub">
+								<li id="gnb5_1_1">
+										<a href="/sdmlib/menu/10115/bbs/20001/bbsPostList.do" ><span>공지사항</span></a>
+										</li>
+								<li id="gnb5_1_2">
+										<a href="/sdmlib/menu/10116/program/30033/calendar.do" ><span>도서관일정</span></a>
+										</li>
+								<li id="gnb5_1_3">
+										<a href="/sdmlib/menu/10117/bbs/20007/bbsPostList.do" ><span>도서관TV</span></a>
+										</li>
+								<li id="gnb5_1_4">
+										<a href="/sdmlib/menu/10119/program/30034/publishDataNewsList.do" ><span>발간자료</span></a>
+										<ul class="MkTab">
+												<li id="gnb5_1_4_1"><a href="/sdmlib/menu/10119/program/30034/publishDataNewsList.do" ><span>연차보고서</span></a></li>
+												<li id="gnb5_1_4_2"><a href="/sdmlib/menu/10120/program/30035/publishDataEtcList.do" ><span>기타자료</span></a></li>
+												</ul>
+										</li>
+								<li id="gnb5_1_5">
+										<a href="/sdmlib/menu/10122/contents/40037/contents.do" ><span>관련법규</span></a>
+										<ul class="MkTab">
+												<li id="gnb5_1_5_1"><a href="/sdmlib/menu/10122/contents/40037/contents.do" ><span>도서관인윤리선언</span></a></li>
+												<li id="gnb5_1_5_2"><a href="/sdmlib/menu/10123/contents/40038/contents.do" ><span>이용서비스헌장</span></a></li>
+												<li id="gnb5_1_5_3"><a href="/sdmlib/menu/10124/contents/40039/contents.do" ><span>운영법규</span></a></li>
+												<li id="gnb5_1_5_4"><a href="/sdmlib/menu/10125/contents/40040/contents.do" ><span>관련법규</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb5_2">
+						<a href="/sdmlib/menu/10126/bbs/20002/bbsPostList.do?searchCategory=1490" ><span>자주묻는질문</span></a>
+						</li>
+				<li id="gnb5_3">
+						<a href="/sdmlib/menu/10128/bbs/20003/bbsPostList.do" ><span>이용자마당</span></a>
+						<ul class="MkSub">
+								<li id="gnb5_3_1">
+										<a href="/sdmlib/menu/10128/bbs/20003/bbsPostList.do" ><span>자유게시판</span></a>
+										</li>
+								<li id="gnb5_3_2">
+										<a href="https://www.nl.go.kr/NL/contents/N30502000000.do"  target="_blank" title="새창열림"><span>사서에게물어보세요</span></a>
+										</li>
+								</ul>
+						</li>
+				</ul>
+		</li>
+<li id="gnb6">
+		<a href="/sdmlib/menu/10133/program/30037/mypage/myInfo.do" ><span>나의도서관</span></a>
+		<p class="gnbTit">나의도서관</p>
+		<ul>
+				<li id="gnb6_1">
+						<a href="/sdmlib/menu/10133/program/30037/mypage/myInfo.do" ><span>내서재</span></a>
+						<ul class="MkSub">
+								<li id="gnb6_1_1">
+										<a href="/sdmlib/menu/10133/program/30037/mypage/myInfo.do" ><span>나의정보</span></a>
+										</li>
+								<li id="gnb6_1_2">
+										<a href="/sdmlib/menu/10134/program/30038/mypage/bookcaseMain.do" ><span>관심도서목록</span></a>
+										</li>
+								<li id="gnb6_1_3">
+										<a href="/sdmlib/menu/10135/program/30019/mypage/hopeBookList.do" ><span>희망도서 신청조회</span></a>
+										</li>
+								<li id="gnb6_1_4">
+										<a href="/sdmlib/menu/10136/program/30020/mypage/bookDeliveryApplyList.do" ><span>서대문책이요 신청조회</span></a>
+										</li>
+								<li id="gnb6_1_5">
+										<a href="/sdmlib/menu/10138/program/30021/mypage/bookstartApplyList.do" ><span>북스타트 신청조회</span></a>
+										<ul class="MkTab">
+												<li id="gnb6_1_5_1"><a href="/sdmlib/menu/10138/program/30021/mypage/bookstartApplyList.do" ><span>책꾸러미 신청내역</span></a></li>
+												<li id="gnb6_1_5_2"><a href="/sdmlib/menu/10139/program/30022/mypage/bookstartPlayApplyList.do" ><span>책놀이 신청내역</span></a></li>
+												</ul>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb6_2">
+						<a href="/sdmlib/menu/10141/program/30039/mypage/loanStatusList.do" ><span>도서이용정보</span></a>
+						<ul class="MkTab">
+								<li id="gnb6_2_1">
+										<a href="/sdmlib/menu/10141/program/30039/mypage/loanStatusList.do" ><span>대출현황</span></a>
+										</li>
+								<li id="gnb6_2_2">
+										<a href="/sdmlib/menu/10142/program/30040/mypage/reservationStatusList.do" ><span>예약현황</span></a>
+										</li>
+								<li id="gnb6_2_3">
+										<a href="/sdmlib/menu/10143/program/30041/mypage/mutualLoanList.do" ><span>상호대차</span></a>
+										</li>
+								<li id="gnb6_2_4">
+										<a href="/sdmlib/menu/10144/program/30042/mypage/loanHistoryList.do" ><span>대출이력</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb6_3">
+						<a href="/sdmlib/menu/10146/program/30024/mypage/lectureApplyList.do" ><span>강좌/행사 신청조회</span></a>
+						<ul class="MkSub">
+								<li id="gnb6_3_1">
+										<a href="/sdmlib/menu/10146/program/30024/mypage/lectureApplyList.do" ><span>문화강좌</span></a>
+										</li>
+								<li id="gnb6_3_2">
+										<a href="/sdmlib/menu/10147/program/30025/mypage/eventApplyList.do" ><span>도서관행사</span></a>
+										</li>
+								<li id="gnb6_3_3">
+										<a href="/sdmlib/menu/10148/program/30026/mypage/readingClubApplyList.do" ><span>동아리행사</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb6_4">
+						<a href="/sdmlib/menu/10150/program/30028/mypage/volunteerApplyList.do" ><span>참여 신청조회</span></a>
+						<ul class="MkSub">
+								<li id="gnb6_4_1">
+										<a href="/sdmlib/menu/10150/program/30028/mypage/volunteerApplyList.do" ><span>자원봉사</span></a>
+										</li>
+								<li id="gnb6_4_2">
+										<a href="/sdmlib/menu/10151/program/30030/mypage/facilityApplyList.do" ><span>공간대관</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb6_5">
+						<a href="/sdmlib/menu/10153/bbs/20003/mypage/bbsPostList.do" ><span>나의게시글</span></a>
+						<ul class="MkSub">
+								<li id="gnb6_5_1">
+										<a href="/sdmlib/menu/10153/bbs/20003/mypage/bbsPostList.do" ><span>자유게시판</span></a>
+										</li>
+								</ul>
+						</li>
+				</ul>
+		</li>
+<li id="gnb7">
+		<a href="/sdmlib/menu/10156/program/30043/memberLogin.do" ><span>통합회원서비스</span></a>
+		<p class="gnbTit">통합회원서비스</p>
+		<ul>
+				<li id="gnb7_1">
+						<a href="/sdmlib/menu/10156/program/30043/memberLogin.do" ><span>로그인</span></a>
+						</li>
+				<li id="gnb7_2">
+						<a href="/sdmlib/menu/10157/program/30044/memberJoinIntro.do" ><span>회원가입</span></a>
+						</li>
+				<li id="gnb7_3">
+						<a href="/sdmlib/menu/10159/program/30045/memberFindId.do" ><span>아이디찾기</span></a>
+						<ul class="MkTab">
+								<li id="gnb7_3_1">
+										<a href="/sdmlib/menu/10159/program/30045/memberFindId.do" ><span>개인정보로 찾기</span></a>
+										</li>
+								<li id="gnb7_3_2">
+										<a href="/sdmlib/menu/10160/program/30046/memberFindIdCertify.do" ><span>본인인증으로 찾기</span></a>
+										</li>
+								</ul>
+						</li>
+				<li id="gnb7_4">
+						<a href="/sdmlib/menu/10161/program/30047/memberFindPwd.do" ><span>비밀번호찾기</span></a>
+						</li>
+				</ul>
+		</li>
+<li id="gnb8">
+		<a href="/sdmlib/menu/10163/program/30048/memberModify.do" ><span>통합회원서비스</span></a>
+		<p class="gnbTit">통합회원서비스</p>
+		<ul>
+				<li id="gnb8_1">
+						<a href="/sdmlib/menu/10163/program/30048/memberModify.do" ><span>개인정보수정</span></a>
+						</li>
+				<li id="gnb8_2">
+						<a href="/sdmlib/menu/10164/program/30049/memberPwdModify.do" ><span>비밀번호변경</span></a>
+						</li>
+				<li id="gnb8_3">
+						<a href="/sdmlib/menu/10165/program/30050/memberLibraryOneAgree.do" ><span>책이음회원전환</span></a>
+						</li>
+				<li id="gnb8_4">
+						<a href="/sdmlib/menu/10166/program/30051/memberWithdraw.do" ><span>회원탈퇴</span></a>
+						</li>
+				</ul>
+		</li>
+<li id="gnb9">
+		<a href="/sdmlib/menu/10168/program/30052/siteMap.do" ><span>홈페이지이용안내</span></a>
+		<p class="gnbTit">홈페이지이용안내</p>
+		<ul>
+				<li id="gnb9_1">
+						<a href="/sdmlib/menu/10168/program/30052/siteMap.do" ><span>사이트맵</span></a>
+						</li>
+				<li id="gnb9_2">
+						<a href="/sdmlib/menu/10169/contents/40041/contents.do" ><span>이용약관</span></a>
+						</li>
+				<li id="gnb9_3">
+						<a href="https://www.sscmc.or.kr/page/intro/sub6_5_8_1.php"  target="_blank" title="새창열림"><span>개인정보처리방침</span></a>
+						</li>
+				<li id="gnb9_4">
+						<a href="/sdmlib/menu/10171/contents/40043/contents.do" ><span>이메일수집거부</span></a>
+						</li>
+				</ul>
+		</li>
+
+		</ul>
+		
+			
+				<script>
+					$("#gnb8").remove();
+				</script>
+			
+			
+		
+	</nav>
+	<div id="submenuArea"></div>
+	<div id="gnbblackBG"></div>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	$(document).ready(function(e) {
+		$("#topSearchKeyword").keypress(function (e){
+			if((e.keyCode || e.which) == 13){
+				fnTopSearch();
+				e.preventDefault();
+			}
+		});
+		$("#topSearchBtn").click(fnTopSearch);
+
+		$("#topSearchBestKeyword").load("/sdmlib/include/topSearchBestKeyword.do");
+	});
+
+	function fnTopSearch() {
+		var form = document.topSearchForm;
+		if(isEmpty(form.searchKeyword.value)){
+			alert("검색어를 입력하세요.");
+			form.searchKeyword.focus();
+			return false;
+		}
+		form.action="/sdmlib/program/searchResultList.do";
+		form.submit();
+	}
+
+	function fnTopSearchBestKeyword(){
+		$("#topSearchBestKeyword").load("/sdmlib/include/topSearchBestKeyword.do");
+	}
+
+	function fnTopSearchBest(keyword){
+		var form = document.topSearchForm;
+		form.searchKeyword.value = keyword;
+		fnTopSearch();
+		e.preventDefault();
+	}
+</script>
+<form name="topSearchForm" id="topSearchForm" method="post">
+	<input type="hidden" name="searchType" value="SIMPLE">
+	<input type="hidden" name="searchManageCode" value="ALL" />
+	
+	<fieldset>
+		<legend>통합자료 검색영역</legend>
+		<div id="searchBox" class="searchBoxWrap">
+			<div class="searchBoxInner">
+				<span class="schTit mobileHide"><strong>자료검색</strong></span>
+				<div class="searchBox" tabindex="0">
+					<select id="topSearchType" name="topSearchType" title="검색유형 선택">
+						<option selected="selected">서명</option>
+						<option>ISBN</option>
+					</select>
+					<div class="keywordInput">
+						<label for="topSearchKeyword" class="blind">검색어 입력</label>
+						<input type="text" title="검색어 입력" id="topSearchKeyword" name="searchKeyword" autocomplete="off">
+						<a href="#search" id="topSearchBtn" class="btnSearch"><span class="blind">검색</span></a>
+					</div>
+				</div>
+				<div id="topSearchBestKeyword"></div>
+				<a href="#searchTopClose" id="searchTopClose"><span class="blind">검색창닫기</span></a>
+			</div>
+		</div>
+	</fieldset>
+</form>
+
+
+</header>
+	<div id="container" class="sub">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="navWrap mobileHide">
+	<div class="navGroup clearfix">
+		<div id="lnb" class="navArea clearfix"></div>
+		<!-- SNS 공유하기 -->
+		<div class="snsFarm">
+			<ul class="snsBtnArea clearfix">
+				<li>
+					<a href="#snsGroup" id="sns" title="SNS 공유하기" class="snsShare"><span class="blind">SNS 공유하기</span></a>
+					<div id="snsGroup" class="snsList clearfix">
+						<a href="#sns1" id="snsShortUrl" title="단축URL 복사하기" onclick="fnShorturlCopy();" class="snsUrl"><span class="blind">단축URL</span></a>
+						<a href="#sns2" id="sns2" title="QR코드 레이어팝업 열림" class="snsQr" data-tooltip="chartSns"><span class="blind">QR코드</span></a>
+						<a href="#sns3" id="sns3" onclick="javascript:fnShareKakaoStory('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="카카오스토리에 공유하기 새창열림" class="snsStory"><span class="blind">카카오스토리</span></a>
+						<a href="#sns4" id="sns4" onclick="javascript:fnShareTwitter('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="트위터에 공유하기 새창열림" class="snsTwitter"><span class="blind">트위터</span></a>
+						<a href="#sns5" id="sns5" onclick="javascript:fnShareFaceBook('https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&amp;searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&amp;searchManageCodeArr=MA'); return false;" title="페이스북에 공유하기 새창열림" class="snsFacebook"><span class="blind">페이스북</span></a>
+					</div>
+				</li>
+				<li class="mobileHide"><a href="#print" id="pprint" onclick="javascript:fnPrintPopup('sdmlib'); return false;" title="새창에서 열림" class="snsPrint"><span class="blind">현재화면 프린트</span></a></li>
+			</ul>
+		</div>
+		<!-- //SNS 공유하기 -->
+	</div>
+</div>
+
+<!-- 레이어팝업 -->
+<div class="chartSns" tabindex="0" data-tooltip-con="chartSns" data-focus="chartSns" data-focus-prev="chartSns-close">
+	<div class="inner">
+		<p class="title">QR코드</p>
+		<div class="qrimg" id="qrcodeImg">a</div>
+		<div class="conTxt">
+			<p><strong>QR코드 이미지 저장</strong></p>
+			QR코드 &gt; 우측 클릭 &gt; 저장 &gt; 확장자 변경(png, jpg) 후 저장
+		</div>
+		<a href="#close" class="tooltip-close chart-close" data-focus="chartSns-close" data-focus-next="chartSns"><span class="blind">닫기</span></a>
+	</div>
+</div>
+<!-- //레이어팝업 -->
+<script src="/include/js/clipboard.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+	$('#sns').click(function(e) {
+		$.ajax({
+			type: "POST",
+			url: "/cmmn/share/shortUrl.do",
+			dataType : "json",
+			data: { "url" : "https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE%26searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90%26searchManageCodeArr=MA"},
+			async: false,
+			error : function (request, status, error){
+				//alert("에러코드: " + request.status + "\r\n메시지: " + request.responseText);
+			},
+			success: function(data) {
+				//$("#shortUrl").html(data.url);
+				$("#qrcodeImg").html('<img src="' + data.url + '.qr" alt="https://lib.sdm.or.kr/sdmlib/menu/10003/program/30001/searchResultList.do?searchType=SIMPLE&searchKeyword=%EB%B6%88%ED%8E%B8%ED%95%9C+%ED%8E%B8%EC%9D%98%EC%A0%90&searchManageCodeArr=MA" >');
+				$("#snsShortUrl").attr('data-clipboard-text',  data.url );
+			}
+		});
+	});
+
+	function fnShorturlCopy() {
+		var clipboard = new ClipboardJS('#snsShortUrl');
+		alert('단축주소가 복사되었습니다.');
+		return false;
+	}
+
+</script>
+
+		<div id="contentGroup">
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="naviandtitle">
+	<h3>통합검색</h3>
+	<a href="#snsGroup" id="snsSub" title="SNS 공유하기" class="snsShareSub"><span class="blind">SNS 공유하기</span></a>
+</div>
+
+			<div id="contents" class="contentArea">
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="tabNav">
+	<!-- <div class="virtSelect"><a href="#script">탭메뉴</a></div> -->
+	<div class="tabNavInner">
+		<ul class="tnb clearfix">
+			<li></li>
+		</ul>
+	</div>
+</div>
+<script>
+
+
+
+
+</script>
+				<!--Real Contents Start-->
+				<div class="searchResultZone">
+					<form id="searchForm" name="searchForm" method="get">
+						<input type="hidden" name="searchType" value="SIMPLE">
+						<input type="hidden" name="preSearchKeyword" value="불편한 편의점">
+						<input type="hidden" name="viewType" value="LIST">
+						<input type="hidden" name="searchPubFormCode" value="ALL">
+						<input type="hidden" name="currentPageNo" value="1"/>
+						
+
+						<div class="searchWrap">
+							<div class="searchToparea">
+								<div class="searchToparea">
+									<div class="searchBestKeyword">
+										
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="searchBestTit">
+	<p>인기검색어</p>
+</div>
+
+
+	
+		
+	
+	
+
+<ul class="keywordList clearfix">
+	
+		
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('흔한남매'); return false;">흔한남매</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('불편한 편의점'); return false;">불편한 편의점</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('에그박사'); return false;">에그박사</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('지대넓얕'); return false;">지대넓얕</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('깜냥'); return false;">깜냥</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('파친코'); return false;">파친코</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('똥볶이'); return false;">똥볶이</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('불편한편의점'); return false;">불편한편의점</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('백희나'); return false;">백희나</a>
+					</li>
+				
+			
+				
+					<li>
+						<a href="#link" onclick="javascript:fnSearchKeyword('놓지마 과학'); return false;">놓지마 과학</a>
+					</li>
+				
+			
+		
+		
+	
+</ul>
+
+
+									</div>
+									<div class="searchBardiv">
+										<div class="searchInputbox">
+											<span class="reSearch">
+												<input type="checkbox" id="reSearchYn" name="reSearchYn" value="Y">
+												<label for="reSearchYn">결과 내 검색</label>
+											</span>
+											<div class="searchUtilWrap">
+												<ol class="clearfix">
+													<li><a href="#lang" data-tab="sh_util01" class="sh_util01"><span class="blind">다국어 입력</span></a></li>
+												</ol>
+											</div>
+											<input type="text" id="searchKeyword" name="searchKeyword" title="검색어를 입력하세요." value="불편한 편의점" placeholder="검색어를 입력하세요." autocomplete="off">
+											<input type="button" id="searchBtn" title="검색" value="검색" class="searchBtn">
+										</div>
+
+										<div class="tab_wrap_search">
+											
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+$(function(){
+	$('.save_off').click(function() {
+		var useYn = "Y";
+		if(!$(this).hasClass("on")) {
+			useYn = "N";
+		}else {
+			if ('true'){
+				$('.tab_wrap_search .tab_con .p1 li').css("display","none");
+				$('.tab_wrap_search .tab_con .p1 li.none').css("display","block");
+			}
+		}
+		$.ajax({
+			type:"POST",
+			url: "/search/include/recentKeywordUseYn.do",
+			data : {"useYn": useYn},
+			dataType : "json",
+			async: false,
+			success: function(data){},
+			error : function(request, status, error) {
+				alert("에러코드: " + request.status + "\n메시지: " + request.responseText);
+			}
+		});
+	});
+
+	$('.recent_delete').click(function() {
+		$.ajax({
+			type:"POST",
+			url: "/search/include/searchRecentKeywordDelete.do",
+			dataType : "json",
+			async: false,
+			success: function(data){
+				$('.tab_wrap_search .tab_con .p1 li').css("display","none");
+				$('.tab_wrap_search .tab_con .p1 li.none').css("display","block");
+			},
+			error : function(request, status, error) {
+				alert("에러코드: " + request.status + "\n메시지: " + request.responseText);
+			}
+		});
+	});
+});
+</script>
+
+<div id="tab_con" class="tab_con">
+	<div class="popular_search" style="display: block;">
+		<ul>
+			
+				
+					
+						
+						
+							<li class="none">최근 검색어가 없습니다</li>
+						
+					
+				
+				
+			
+			<li class="none" style="display: none;">검색어 정보가 없습니다.</li>
+		</ul>
+	</div>
+
+
+</div>
+<div class="button_wrap">
+	<button type="button" class="recent_delete">기록삭제</button>
+	<div class="button_box">
+		
+			
+				<button type="button" class="save_off on">검색어저장 끄기</button>
+			
+			
+		
+	</div>
+</div>
+
+
+										</div>
+										
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/include/booksearch/js/autocom.js"></script>
+<script>
+	$(function(){
+		fnAutoComplete();
+	});
+</script>
+<div class="autoSearch" id="atcBox">
+	<ul id="atcList"></ul>
+	<p class="autoOff">자동완성 기능이 꺼져있습니다</p>
+	<div class="button_wrap">
+		<div class="button_box">
+			<button type="button" class="auto_off on" id="atcToggleBtn">자동완성 끄기</button>
+		</div>
+	</div>
+</div>
+
+										<a href="/sdmlib/program/searchDetail.do" class="btn" id="detailBtn" title="상세검색 페이지 이동">상세검색</a>
+									</div>
+								</div>
+							</div>
+							<div class="worldwordWrap" id="sh_util01">
+								<!-- 다국어 키보드  -->
+								
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="worldwordBox ui-draggable" id="worldwordBoxLayer">
+	<fieldset>
+		<legend>다국어 입력폼</legend>
+		<div class="worldword clearfix">
+			<h4 class="title">다국어입력</h4>
+			<ul class="language webLang">
+				<li><a class="selected" href="#none">히라가나</a></li>
+				<li><a href="#none">가타카나</a></li>
+				<li><a href="#none">한글고어</a></li>
+				<li><a href="#none">그리스문자</a></li>
+				<li><a href="#none">라틴문자</a></li>
+				<li><a href="#none">러시아문자</a></li>
+				<li><a href="#none">단위기호</a></li>
+				<li><a href="#none">일반기호</a></li>
+				<li><a href="#none">로마자</a></li>
+				<li><a href="#none">첨자기호</a></li>
+				<li><a href="#none">몽골어</a></li>
+				<li><a href="#none">베트남어</a></li>
+				<li><a href="#none">캄보디아어</a></li>
+				<li><a href="#none">태국어</a></li>
+			</ul>
+
+			<select class="mobLang" title="언어 선택">
+				<option>히라가나</option>
+				<option>가타카나</option>
+				<option>한글고어</option>
+				<option>그리스문자</option>
+				<option>라틴문자</option>
+				<option>러시아문자</option>
+				<option>단위기호</option>
+				<option>일반기호</option>
+				<option>로마자</option>
+				<option>첨자기호</option>
+				<option>몽골어</option>
+				<option>베트남어</option>
+				<option>캄보디아어</option>
+				<option>태국어</option>
+			</select>
+
+			<!-- 히라가나 -->
+			<div class="languageContents" style="display: block;">
+				<ul>
+					<li><a href="#">あ</a></li>
+					<li><a href="#">ぁ</a></li>
+					<li><a href="#">か</a></li>
+					<li><a href="#">が</a></li>
+					<li><a href="#">さ</a></li>
+					<li><a href="#">ざ</a></li>
+					<li><a href="#">た</a></li>
+					<li><a href="#">だ</a></li>
+					<li><a href="#">な</a></li>
+					<li><a href="#">は</a></li>
+					<li><a href="#">ば</a></li>
+					<li><a href="#">ぱ</a></li>
+					<li><a href="#">ま</a></li>
+					<li><a href="#">や</a></li>
+					<li><a href="#">ゃ</a></li>
+					<li><a href="#">ら</a></li>
+					<li><a href="#">わ</a></li>
+					<li><a href="#">ゎ</a></li>
+					<li><a href="#">ん</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">い</a></li>
+					<li><a href="#">ぃ</a></li>
+					<li><a href="#">き</a></li>
+					<li><a href="#">ぎ</a></li>
+					<li><a href="#">し</a></li>
+					<li><a href="#">じ</a></li>
+					<li><a href="#">ち</a></li>
+					<li><a href="#">ぢ</a></li>
+					<li><a href="#">に</a></li>
+					<li><a href="#">ひ</a></li>
+					<li><a href="#">び</a></li>
+					<li><a href="#">ぴ</a></li>
+					<li><a href="#">み</a></li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li><a href="#">り</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">う</a></li>
+					<li><a href="#">ぅ</a></li>
+					<li><a href="#">く</a></li>
+					<li><a href="#">ぐ</a></li>
+					<li><a href="#">す</a></li>
+					<li><a href="#">ず</a></li>
+					<li><a href="#">つ</a></li>
+					<li><a href="#">づ</a></li>
+					<li><a href="#">っ</a></li>
+					<li><a href="#">ぬ</a></li>
+					<li><a href="#">ふ</a></li>
+					<li><a href="#">ぶ</a></li>
+					<li><a href="#">ぷ</a></li>
+					<li><a href="#">む</a></li>
+					<li><a href="#">ゆ</a></li>
+					<li><a href="#">ゅ</a></li>
+					<li><a href="#">る</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">え</a></li>
+					<li><a href="#">ぇ</a></li>
+					<li><a href="#">け</a></li>
+					<li><a href="#">げ</a></li>
+					<li><a href="#">せ</a></li>
+					<li><a href="#">ぜ</a></li>
+					<li><a href="#">て</a></li>
+					<li><a href="#">で</a></li>
+					<li><a href="#">ね</a></li>
+					<li><a href="#">へ</a></li>
+					<li><a href="#">べ</a></li>
+					<li><a href="#">ぺ</a></li>
+					<li><a href="#">め</a></li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li><a href="#">れ</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">お</a></li>
+					<li><a href="#">ぉ</a></li>
+					<li><a href="#">こ</a></li>
+					<li><a href="#">ご</a></li>
+					<li><a href="#">そ</a></li>
+					<li><a href="#">ぞ</a></li>
+					<li><a href="#">と</a></li>
+					<li><a href="#">ど</a></li>
+					<li><a href="#">の</a></li>
+					<li><a href="#">ほ</a></li>
+					<li><a href="#">ぼ</a></li>
+					<li><a href="#">ぽ</a></li>
+					<li><a href="#">も</a></li>
+					<li><a href="#">よ</a></li>
+					<li><a href="#">ょ</a></li>
+					<li><a href="#">ろ</a></li>
+					<li><a href="#">を</a></li>
+				</ul>
+			</div>
+			<!-- //히라가나 -->
+			<!-- 가타카나 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">ア</a></li>
+					<li><a href="#">ァ</a></li>
+					<li><a href="#">カ</a></li>
+					<li><a href="#">ガ</a></li>
+					<li><a href="#">サ</a></li>
+					<li><a href="#">ザ</a></li>
+					<li><a href="#">タ</a></li>
+					<li><a href="#">ダ</a></li>
+					<li><a href="#">ナ</a></li>
+					<li><a href="#">ハ</a></li>
+					<li><a href="#">バ</a></li>
+					<li><a href="#">パ</a></li>
+					<li><a href="#">マ</a></li>
+					<li><a href="#">ヤ</a></li>
+					<li><a href="#">ャ</a></li>
+					<li><a href="#">ラ</a></li>
+					<li><a href="#">ワ</a></li>
+					<li><a href="#">ヮ</a></li>
+					<li><a href="#">ン</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">イ</a></li>
+					<li><a href="#">ィ</a></li>
+					<li><a href="#">キ</a></li>
+					<li><a href="#">ギ</a></li>
+					<li><a href="#">シ</a></li>
+					<li><a href="#">ジ</a></li>
+					<li><a href="#">チ</a></li>
+					<li><a href="#">ヂ</a></li>
+					<li><a href="#">ニ</a></li>
+					<li><a href="#">ヒ</a></li>
+					<li><a href="#">ビ</a></li>
+					<li><a href="#">ピ</a></li>
+					<li><a href="#">ミ</a></li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li><a href="#">リ</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">ウ</a></li>
+					<li><a href="#">ゥ</a></li>
+					<li><a href="#">ク</a></li>
+					<li><a href="#">グ</a></li>
+					<li><a href="#">ス</a></li>
+					<li><a href="#">ズ</a></li>
+					<li><a href="#">ツ</a></li>
+					<li><a href="#">ヅ</a></li>
+					<li><a href="#">ッ</a></li>
+					<li><a href="#">ヌ</a></li>
+					<li><a href="#">フ</a></li>
+					<li><a href="#">ブ</a></li>
+					<li><a href="#">プ</a></li>
+					<li><a href="#">ム</a></li>
+					<li><a href="#">ユ</a></li>
+					<li><a href="#">ュ</a></li>
+					<li><a href="#">ル</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">エ</a></li>
+					<li><a href="#">ェ</a></li>
+					<li><a href="#">ケ</a></li>
+					<li><a href="#">ゲ</a></li>
+					<li><a href="#">セ</a></li>
+					<li><a href="#">ゼ</a></li>
+					<li><a href="#">テ</a></li>
+					<li><a href="#">デ</a></li>
+					<li><a href="#">ネ</a></li>
+					<li><a href="#">ヘ</a></li>
+					<li><a href="#">ベ</a></li>
+					<li><a href="#">ペ</a></li>
+					<li><a href="#">メ</a></li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li>&nbsp;</li>
+					<li><a href="#">レ</a></li>
+				</ul>
+				<ul>
+					<li><a href="#">オ</a></li>
+					<li><a href="#">ォ</a></li>
+					<li><a href="#">コ</a></li>
+					<li><a href="#">ゴ</a></li>
+					<li><a href="#">ソ</a></li>
+					<li><a href="#">ゾ</a></li>
+					<li><a href="#">ト</a></li>
+					<li><a href="#">ド</a></li>
+					<li><a href="#">ノ</a></li>
+					<li><a href="#">ホ</a></li>
+					<li><a href="#">ボ</a></li>
+					<li><a href="#">ポ</a></li>
+					<li><a href="#">モ</a></li>
+					<li><a href="#">ヨ</a></li>
+					<li><a href="#">ョ</a></li>
+					<li><a href="#">ロ</a></li>
+					<li><a href="#">ヲ</a></li>
+					<li><a href="#">―</a></li>
+				</ul>
+			</div>
+			<!-- //가타카나 -->
+			<!-- 한글고어 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">ㅥ</a></li>
+					<li><a href="#">ㅦ</a></li>
+					<li><a href="#">ㅧ</a></li>
+					<li><a href="#">ㅨ</a></li>
+					<li><a href="#">ㅩ</a></li>
+					<li><a href="#">ㅪ</a></li>
+					<li><a href="#">ㅫ</a></li>
+					<li><a href="#">ㅬ</a></li>
+					<li><a href="#">ㅭ</a></li>
+					<li><a href="#">ㅮ</a></li>
+					<li><a href="#">ㅯ</a></li>
+					<li><a href="#">ㅰ</a></li>
+					<li><a href="#">ㅱ</a></li>
+					<li><a href="#">ㅲ</a></li>
+					<li><a href="#">ㅳ</a></li>
+					<li><a href="#">ㅴ</a></li>
+					<li><a href="#">ㅵ</a></li>
+					<li><a href="#">ㅶ</a></li>
+					<li><a href="#">ㅷ</a></li>
+					<li><a href="#">ㅸ</a></li>
+					<li><a href="#">ㅹ</a></li>
+					<li><a href="#">ㅺ</a></li>
+					<li><a href="#">ㅻ</a></li>
+					<li><a href="#">ㅼ</a></li>
+					<li><a href="#">ㅽ</a></li>
+					<li><a href="#">ㅾ</a></li>
+					<li><a href="#">ㅿ</a></li>
+					<li><a href="#">ㆀ</a></li>
+					<li><a href="#">ㆁ</a></li>
+					<li><a href="#">ㆂ</a></li>
+					<li><a href="#">ㆃ</a></li>
+					<li><a href="#">ㆄ</a></li>
+					<li><a href="#">ㆅ</a></li>
+					<li><a href="#">ㆆ</a></li>
+					<li><a href="#">ㆇ</a></li>
+					<li><a href="#">ㆈ</a></li>
+					<li><a href="#">ㆉ</a></li>
+					<li><a href="#">ㆊ</a></li>
+					<li><a href="#">ㆋ</a></li>
+					<li><a href="#">ㆌ</a></li>
+					<li><a href="#">ㆍ</a></li>
+					<li><a href="#">ㆎ</a></li>
+				</ul>
+			</div>
+			<!-- //한글고어 -->
+			<!-- 그리스문자 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">Α</a></li>
+					<li><a href="#">Β</a></li>
+					<li><a href="#">Γ</a></li>
+					<li><a href="#">Δ</a></li>
+					<li><a href="#">Ε</a></li>
+					<li><a href="#">Ζ</a></li>
+					<li><a href="#">Η</a></li>
+					<li><a href="#">Θ</a></li>
+					<li><a href="#">Ι</a></li>
+					<li><a href="#">Κ</a></li>
+					<li><a href="#">Λ</a></li>
+					<li><a href="#">Μ</a></li>
+					<li><a href="#">Ν</a></li>
+					<li><a href="#">Ξ</a></li>
+					<li><a href="#">Ο</a></li>
+					<li><a href="#">Π</a></li>
+					<li><a href="#">Ρ</a></li>
+					<li><a href="#">Σ</a></li>
+					<li><a href="#">Τ</a></li>
+					<li><a href="#">Υ</a></li>
+					<li><a href="#">Φ</a></li>
+					<li><a href="#">Χ</a></li>
+					<li><a href="#">Ψ</a></li>
+					<li><a href="#">Ω</a></li>
+					<li><a href="#">α</a></li>
+					<li><a href="#">β</a></li>
+					<li><a href="#">γ</a></li>
+					<li><a href="#">δ</a></li>
+					<li><a href="#">ε</a></li>
+					<li><a href="#">ζ</a></li>
+					<li><a href="#">η</a></li>
+					<li><a href="#">θ</a></li>
+					<li><a href="#">ι</a></li>
+					<li><a href="#">κ</a></li>
+					<li><a href="#">λ</a></li>
+					<li><a href="#">μ</a></li>
+					<li><a href="#">ν</a></li>
+					<li><a href="#">ξ</a></li>
+					<li><a href="#">ο</a></li>
+					<li><a href="#">π</a></li>
+					<li><a href="#">ρ</a></li>
+					<li><a href="#">σ</a></li>
+					<li><a href="#">τ</a></li>
+					<li><a href="#">υ</a></li>
+					<li><a href="#">φ</a></li>
+					<li><a href="#">χ</a></li>
+					<li><a href="#">ψ</a></li>
+					<li><a href="#">ω</a></li>
+				</ul>
+			</div>
+			<!-- //그리스문자 -->
+			<!-- 괄호기호 -->
+			<!-- //기술기호 -->
+			<!-- 라틴문자 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">Æ</a></li>
+					<li><a href="#">Ð</a></li>
+					<li><a href="#">Ħ</a></li>
+					<li><a href="#">ĲvĿ</a></li>
+					<li><a href="#">Ł</a></li>
+					<li><a href="#">Ø</a></li>
+					<li><a href="#">Œ</a></li>
+					<li><a href="#">Þ</a></li>
+					<li><a href="#">Ŧ</a></li>
+					<li><a href="#">Ŋ</a></li>
+					<li><a href="#">æ</a></li>
+					<li><a href="#">đ</a></li>
+					<li><a href="#">ð</a></li>
+					<li><a href="#">ħ</a></li>
+					<li><a href="#">ı</a></li>
+					<li><a href="#">ĳ</a></li>
+					<li><a href="#">ĸ</a></li>
+					<li><a href="#">ŀ</a></li>
+					<li><a href="#">ł</a></li>
+					<li><a href="#">ø</a></li>
+					<li><a href="#">œ</a></li>
+					<li><a href="#">ß</a></li>
+					<li><a href="#">þ</a></li>
+					<li><a href="#">ŧ</a></li>
+					<li><a href="#">ŋ</a></li>
+					<li><a href="#">ŉ</a></li>
+				</ul>
+			</div>
+			<!-- //라틴문자 -->
+			<!-- 러시아문자 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">А</a></li>
+					<li><a href="#">Б</a></li>
+					<li><a href="#">В</a></li>
+					<li><a href="#">Г</a></li>
+					<li><a href="#">Д</a></li>
+					<li><a href="#">Е</a></li>
+					<li><a href="#">Ё</a></li>
+					<li><a href="#">Ж</a></li>
+					<li><a href="#">З</a></li>
+					<li><a href="#">И</a></li>
+					<li><a href="#">Й</a></li>
+					<li><a href="#">К</a></li>
+					<li><a href="#">Л</a></li>
+					<li><a href="#">М</a></li>
+					<li><a href="#">Н</a></li>
+					<li><a href="#">О</a></li>
+					<li><a href="#">П</a></li>
+					<li><a href="#">Р</a></li>
+					<li><a href="#">С</a></li>
+					<li><a href="#">Т</a></li>
+					<li><a href="#">У</a></li>
+					<li><a href="#">Ф</a></li>
+					<li><a href="#">Х</a></li>
+					<li><a href="#">Ц</a></li>
+					<li><a href="#">Ч</a></li>
+					<li><a href="#">Ш</a></li>
+					<li><a href="#">Щ</a></li>
+					<li><a href="#">Ъ</a></li>
+					<li><a href="#">Ы</a></li>
+					<li><a href="#">Ь</a></li>
+					<li><a href="#">Э</a></li>
+					<li><a href="#">Ю</a></li>
+					<li><a href="#">Я</a></li>
+					<li><a href="#">а</a></li>
+					<li><a href="#">б</a></li>
+					<li><a href="#">в</a></li>
+					<li><a href="#">г</a></li>
+					<li><a href="#">д</a></li>
+					<li><a href="#">е</a></li>
+					<li><a href="#">ё</a></li>
+					<li><a href="#">ж</a></li>
+					<li><a href="#">з</a></li>
+					<li><a href="#">и</a></li>
+					<li><a href="#">й</a></li>
+					<li><a href="#">к</a></li>
+					<li><a href="#">л</a></li>
+					<li><a href="#">м</a></li>
+					<li><a href="#">н</a></li>
+					<li><a href="#">о</a></li>
+					<li><a href="#">п</a></li>
+					<li><a href="#">р</a></li>
+					<li><a href="#">с</a></li>
+					<li><a href="#">т</a></li>
+					<li><a href="#">у</a></li>
+					<li><a href="#">ф</a></li>
+					<li><a href="#">х</a></li>
+					<li><a href="#">ц</a></li>
+					<li><a href="#">ч</a></li>
+					<li><a href="#">ш</a></li>
+					<li><a href="#">щ</a></li>
+					<li><a href="#">ъ</a></li>
+					<li><a href="#">ы</a></li>
+					<li><a href="#">ь</a></li>
+					<li><a href="#">э</a></li>
+					<li><a href="#">ю</a></li>
+					<li><a href="#">я</a></li>
+				</ul>
+			</div>
+			<!-- //러시아문자 -->
+			<!-- 단위기호 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">′</a></li>
+					<li><a href="#">″</a></li>
+					<li><a href="#">℃</a></li>
+					<li><a href="#">Å</a></li>
+					<li><a href="#">￠</a></li>
+					<li><a href="#">￡</a></li>
+					<li><a href="#">￥</a></li>
+					<li><a href="#">¤</a></li>
+					<li><a href="#">℉</a></li>
+					<li><a href="#">‰</a></li>
+					<li><a href="#">＄</a></li>
+					<li><a href="#">％</a></li>
+					<li><a href="#">Ｆ</a></li>
+					<li><a href="#">￦</a></li>
+					<li><a href="#">㎕</a></li>
+					<li><a href="#">㎖</a></li>
+					<li><a href="#">㎗</a></li>
+					<li><a href="#">ℓ</a></li>
+					<li><a href="#">㎘</a></li>
+					<li><a href="#">㏄</a></li>
+					<li><a href="#">㎣</a></li>
+					<li><a href="#">㎤</a></li>
+					<li><a href="#">㎥</a></li>
+					<li><a href="#">㎦</a></li>
+					<li><a href="#">㎙</a></li>
+					<li><a href="#">㎚</a></li>
+					<li><a href="#">㎛</a></li>
+					<li><a href="#">㎜</a></li>
+					<li><a href="#">㎝</a></li>
+					<li><a href="#">㎞</a></li>
+					<li><a href="#">㎟</a></li>
+					<li><a href="#">㎠</a></li>
+					<li><a href="#">㎡</a></li>
+					<li><a href="#">㎢</a></li>
+					<li><a href="#">㏊</a></li>
+					<li><a href="#">㎍</a></li>
+					<li><a href="#">㎎</a></li>
+					<li><a href="#">㎏</a></li>
+					<li><a href="#">㏏</a></li>
+					<li><a href="#">㎈</a></li>
+					<li><a href="#">㎉</a></li>
+					<li><a href="#">㏈</a></li>
+					<li><a href="#">㎧</a></li>
+					<li><a href="#">㎨</a></li>
+					<li><a href="#">㎰</a></li>
+					<li><a href="#">㎱</a></li>
+					<li><a href="#">㎲</a></li>
+					<li><a href="#">㎳</a></li>
+					<li><a href="#">㎴</a></li>
+					<li><a href="#">㎵</a></li>
+					<li><a href="#">㎶</a></li>
+					<li><a href="#">㎷</a></li>
+					<li><a href="#">㎸</a></li>
+					<li><a href="#">㎹</a></li>
+					<li><a href="#">㎀</a></li>
+					<li><a href="#">㎁</a></li>
+					<li><a href="#">㎂</a></li>
+					<li><a href="#">㎃</a></li>
+					<li><a href="#">㎄</a></li>
+					<li><a href="#">㎺</a></li>
+					<li><a href="#">㎻</a></li>
+					<li><a href="#">㎽</a></li>
+					<li><a href="#">㎾</a></li>
+					<li><a href="#">㎿</a></li>
+					<li><a href="#">㎐</a></li>
+					<li><a href="#">㎑</a></li>
+					<li><a href="#">㎒</a></li>
+					<li><a href="#">㎓</a></li>
+					<li><a href="#">㎔</a></li>
+					<li><a href="#">Ω</a></li>
+					<li><a href="#">㏀</a></li>
+					<li><a href="#">㏁</a></li>
+					<li><a href="#">㎊</a></li>
+					<li><a href="#">㎋</a></li>
+					<li><a href="#">㎌</a></li>
+					<li><a href="#">㏖</a></li>
+					<li><a href="#">㏅</a></li>
+					<li><a href="#">㎭</a></li>
+					<li><a href="#">㎮</a></li>
+					<li><a href="#">㎯</a></li>
+					<li><a href="#">㏛</a></li>
+					<li><a href="#">㎩</a></li>
+					<li><a href="#">㎪</a></li>
+					<li><a href="#">㎫</a></li>
+					<li><a href="#">㎬</a></li>
+					<li><a href="#">㏝</a></li>
+					<li><a href="#">㏐</a></li>
+					<li><a href="#">㏓</a></li>
+					<li><a href="#">㏃</a></li>
+					<li><a href="#">㏉</a></li>
+					<li><a href="#">㏜</a></li>
+					<li><a href="#">㏆</a></li>
+				</ul>
+			</div>
+			<!-- //단위기호 -->
+			<!-- 일반기호 -->
+		<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">§</a></li>
+					<li><a href="#">※</a></li>
+					<li><a href="#">☆</a></li>
+					<li><a href="#">★</a></li>
+					<li><a href="#">○</a></li>
+					<li><a href="#">●</a></li>
+					<li><a href="#">◎</a></li>
+					<li><a href="#">◇</a></li>
+					<li><a href="#">◆</a></li>
+					<li><a href="#">□</a></li>
+					<li><a href="#">■</a></li>
+					<li><a href="#">△</a></li>
+					<li><a href="#">▽</a></li>
+					<li><a href="#">→</a></li>
+					<li><a href="#">←</a></li>
+					<li><a href="#">↑</a></li>
+					<li><a href="#">↓</a></li>
+					<li><a href="#">↔</a></li>
+					<li><a href="#">〓</a></li>
+					<li><a href="#">◁</a></li>
+					<li><a href="#">◀</a></li>
+					<li><a href="#">▷</a></li>
+					<li><a href="#">▶</a></li>
+					<li><a href="#">♤</a></li>
+					<li><a href="#">♠</a></li>
+					<li><a href="#">♡</a></li>
+					<li><a href="#">♥</a></li>
+					<li><a href="#">♧</a></li>
+					<li><a href="#">♣</a></li>
+					<li><a href="#">⊙</a></li>
+					<li><a href="#">◈</a></li>
+					<li><a href="#">▣</a></li>
+					<li><a href="#">◐</a></li>
+					<li><a href="#">◑</a></li>
+					<li><a href="#">▒</a></li>
+					<li><a href="#">▤</a></li>
+					<li><a href="#">▥</a></li>
+					<li><a href="#">▨</a></li>
+					<li><a href="#">▧</a></li>
+					<li><a href="#">▦</a></li>
+					<li><a href="#">▩</a></li>
+					<li><a href="#">♨</a></li>
+					<li><a href="#">☏</a></li>
+					<li><a href="#">☎</a></li>
+					<li><a href="#">☜</a></li>
+					<li><a href="#">☞</a></li>
+					<li><a href="#">¶</a></li>
+					<li><a href="#">†</a></li>
+					<li><a href="#">‡</a></li>
+					<li><a href="#">↕</a></li>
+					<li><a href="#">↗</a></li>
+					<li><a href="#">↙</a></li>
+					<li><a href="#">↖</a></li>
+					<li><a href="#">↘</a></li>
+					<li><a href="#">♭</a></li>
+					<li><a href="#">♩</a></li>
+					<li><a href="#">♪</a></li>
+					<li><a href="#">♬</a></li>
+					<li><a href="#">㉿</a></li>
+					<li><a href="#">㈜</a></li>
+					<li><a href="#">№</a></li>
+					<li><a href="#">㏇</a></li>
+					<li><a href="#">™</a></li>
+					<li><a href="#">㏂</a></li>
+					<li><a href="#">㏘</a></li>
+					<li><a href="#">℡</a></li>
+					<li><a href="#">＃</a></li>
+					<li><a href="#">＆</a></li>
+					<li><a href="#">＊</a></li>
+					<li><a href="#">＠</a></li>
+					<li><a href="#">ª</a></li>
+					<li><a href="#">º</a></li>
+				</ul>
+			</div>
+			<!-- //일반기호 -->
+			<!-- 로마자 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">ⅰ</a></li>
+					<li><a href="#">ⅱ</a></li>
+					<li><a href="#">ⅲ</a></li>
+					<li><a href="#">ⅳ</a></li>
+					<li><a href="#">ⅴ</a></li>
+					<li><a href="#">ⅵ</a></li>
+					<li><a href="#">ⅶ</a></li>
+					<li><a href="#">ⅷ</a></li>
+					<li><a href="#">ⅸ</a></li>
+					<li><a href="#">ⅹ</a></li>
+					<li><a href="#">Ⅰ</a></li>
+					<li><a href="#">Ⅱ</a></li>
+					<li><a href="#">Ⅲ</a></li>
+					<li><a href="#">Ⅳ</a></li>
+					<li><a href="#">Ⅴ</a></li>
+					<li><a href="#">Ⅵ</a></li>
+					<li><a href="#">Ⅶ</a></li>
+					<li><a href="#">Ⅷ</a></li>
+					<li><a href="#">Ⅸ</a></li>
+					<li><a href="#">Ⅹ</a></li>
+				</ul>
+			</div>
+			<!-- //로마자 -->
+			<!-- 첨자기호 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">½</a></li>
+					<li><a href="#">⅓</a></li>
+					<li><a href="#">⅔</a></li>
+					<li><a href="#">¼</a></li>
+					<li><a href="#">¾</a></li>
+					<li><a href="#">⅛</a></li>
+					<li><a href="#">⅜</a></li>
+					<li><a href="#">⅝</a></li>
+					<li><a href="#">⅞</a></li>
+					<li><a href="#">¹</a></li>
+					<li><a href="#">²</a></li>
+					<li><a href="#">³</a></li>
+					<li><a href="#">⁴</a></li>
+					<li><a href="#">ⁿ</a></li>
+					<li><a href="#">₁</a></li>
+					<li><a href="#">₂</a></li>
+					<li><a href="#">₃</a></li>
+					<li><a href="#">₄</a></li>
+				</ul>
+			</div>
+			<!-- //첨자기호 -->
+			<!-- 몽골어 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">а</a></li>
+					<li><a href="#">б</a></li>
+					<li><a href="#">в</a></li>
+					<li><a href="#">г</a></li>
+					<li><a href="#">д</a></li>
+					<li><a href="#">е</a></li>
+					<li><a href="#">ё</a></li>
+					<li><a href="#">ж</a></li>
+					<li><a href="#">з</a></li>
+					<li><a href="#">и</a></li>
+					<li><a href="#">й</a></li>
+					<li><a href="#">к</a></li>
+					<li><a href="#">л</a></li>
+					<li><a href="#">м</a></li>
+					<li><a href="#">н</a></li>
+					<li><a href="#">о</a></li>
+					<li><a href="#">ө</a></li>
+					<li><a href="#">п</a></li>
+					<li><a href="#">р</a></li>
+					<li><a href="#">с</a></li>
+					<li><a href="#">т</a></li>
+					<li><a href="#">у</a></li>
+					<li><a href="#">ү</a></li>
+					<li><a href="#">ф</a></li>
+					<li><a href="#">х</a></li>
+					<li><a href="#">ц</a></li>
+					<li><a href="#">ч</a></li>
+					<li><a href="#">ш</a></li>
+					<li><a href="#">щ</a></li>
+					<li><a href="#">ъ</a></li>
+					<li><a href="#">ы</a></li>
+					<li><a href="#">ь</a></li>
+					<li><a href="#">э</a></li>
+					<li><a href="#">ю</a></li>
+					<li><a href="#">я</a></li>
+				</ul>
+			</div>
+			<!-- //몽골어 -->
+
+			<!-- 베트남어 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">b</a></li>
+					<li><a href="#">c</a></li>
+					<li><a href="#">d</a></li>
+					<li><a href="#">đ</a></li>
+					<li><a href="#">g</a></li>
+					<li><a href="#">h</a></li>
+					<li><a href="#">k</a></li>
+					<li><a href="#">l</a></li>
+					<li><a href="#">m</a></li>
+					<li><a href="#">n</a></li>
+					<li><a href="#">p</a></li>
+					<li><a href="#">q</a></li>
+					<li><a href="#">r</a></li>
+					<li><a href="#">s</a></li>
+					<li><a href="#">t</a></li>
+					<li><a href="#">v</a></li>
+					<li><a href="#">x</a></li>
+					<li><a href="#">f</a></li>
+					<li><a href="#">j</a></li>
+					<li><a href="#">w</a></li>
+					<li><a href="#">z</a></li>
+					<li><a href="#">a</a></li>
+					<li><a href="#">á</a></li>
+					<li><a href="#">à</a></li>
+					<li><a href="#">ả</a></li>
+					<li><a href="#">ã</a></li>
+					<li><a href="#">ạ</a></li>
+					<li><a href="#">ă</a></li>
+					<li><a href="#">ắ</a></li>
+					<li><a href="#">ằ</a></li>
+					<li><a href="#">ẳ</a></li>
+					<li><a href="#">ẵ</a></li>
+					<li><a href="#">ặ</a></li>
+					<li><a href="#">â</a></li>
+					<li><a href="#">ấ</a></li>
+					<li><a href="#">ầ</a></li>
+					<li><a href="#">ẩ</a></li>
+					<li><a href="#">ẫ</a></li>
+					<li><a href="#">ậ</a></li>
+					<li><a href="#">o</a></li>
+					<li><a href="#">ó</a></li>
+					<li><a href="#">ò</a></li>
+					<li><a href="#">ỏ</a></li>
+					<li><a href="#">õ</a></li>
+					<li><a href="#">ọ</a></li>
+					<li><a href="#">ô</a></li>
+					<li><a href="#">ố</a></li>
+					<li><a href="#">ồ</a></li>
+					<li><a href="#">ổ</a></li>
+					<li><a href="#">ỗ</a></li>
+					<li><a href="#">ộ</a></li>
+					<li><a href="#">ơ</a></li>
+					<li><a href="#">ớ</a></li>
+					<li><a href="#">ờ</a></li>
+					<li><a href="#">ở</a></li>
+					<li><a href="#">ỡ</a></li>
+					<li><a href="#">ợ</a></li>
+					<li><a href="#">e</a></li>
+					<li><a href="#">é</a></li>
+					<li><a href="#">è</a></li>
+					<li><a href="#">ẻ</a></li>
+					<li><a href="#">ẽ</a></li>
+					<li><a href="#">ẹ</a></li>
+					<li><a href="#">ê</a></li>
+					<li><a href="#">ế</a></li>
+					<li><a href="#">ề</a></li>
+					<li><a href="#">ể</a></li>
+					<li><a href="#">ễ</a></li>
+					<li><a href="#">ệ</a></li>
+					<li><a href="#">u</a></li>
+					<li><a href="#">ú</a></li>
+					<li><a href="#">ù</a></li>
+					<li><a href="#">ủ</a></li>
+					<li><a href="#">ũ</a></li>
+					<li><a href="#">ụ</a></li>
+					<li><a href="#">ư</a></li>
+					<li><a href="#">ứ</a></li>
+					<li><a href="#">ừ</a></li>
+					<li><a href="#">ử</a></li>
+					<li><a href="#">ữ</a></li>
+					<li><a href="#">ự</a></li>
+					<li><a href="#">i</a></li>
+					<li><a href="#">í</a></li>
+					<li><a href="#">ì</a></li>
+					<li><a href="#">ỉ</a></li>
+					<li><a href="#">ĩ</a></li>
+					<li><a href="#">ị</a></li>
+					<li><a href="#">y</a></li>
+					<li><a href="#">ý</a></li>
+					<li><a href="#">ỳ</a></li>
+					<li><a href="#">ỷ</a></li>
+					<li><a href="#">ỹ</a></li>
+					<li><a href="#">ỵ</a></li>
+				</ul>
+			</div>
+			<!-- //베트남어 -->
+
+			<!-- 캄보디아어 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">ក</a></li>
+					<li><a href="#">ខ</a></li>
+					<li><a href="#">គ</a></li>
+					<li><a href="#">ឃ</a></li>
+					<li><a href="#">ង</a></li>
+					<li><a href="#">ច</a></li>
+					<li><a href="#">ឆ</a></li>
+					<li><a href="#">ជ</a></li>
+					<li><a href="#">ឈ</a></li>
+					<li><a href="#">ញ</a></li>
+					<li><a href="#">ដ</a></li>
+					<li><a href="#">ឋ</a></li>
+					<li><a href="#">ឌ</a></li>
+					<li><a href="#">ឍ</a></li>
+					<li><a href="#">ណ</a></li>
+					<li><a href="#">ត</a></li>
+					<li><a href="#">ថ</a></li>
+					<li><a href="#">ទ</a></li>
+					<li><a href="#">ធ</a></li>
+					<li><a href="#">ន</a></li>
+					<li><a href="#">ប</a></li>
+					<li><a href="#">ផ</a></li>
+					<li><a href="#">ព</a></li>
+					<li><a href="#">ភ</a></li>
+					<li><a href="#">ម</a></li>
+					<li><a href="#">យ</a></li>
+					<li><a href="#">រ</a></li>
+					<li><a href="#">ល</a></li>
+					<li><a href="#">វ</a></li>
+					<li><a href="#">ឝ</a></li>
+					<li><a href="#">ឞ</a></li>
+					<li><a href="#">ស</a></li>
+					<li><a href="#">ហ</a></li>
+					<li><a href="#">ឡ</a></li>
+					<li><a href="#">អ</a></li>
+					<li><a href="#">ឣ</a></li>
+					<li><a href="#">ឤ</a></li>
+					<li><a href="#">ឥ</a></li>
+					<li><a href="#">ឦ</a></li>
+					<li><a href="#">ឧ</a></li>
+					<li><a href="#">ឨ</a></li>
+					<li><a href="#">ឩ</a></li>
+					<li><a href="#">ឪ</a></li>
+					<li><a href="#">ឫ</a></li>
+					<li><a href="#">ឬ</a></li>
+					<li><a href="#">ឭ</a></li>
+					<li><a href="#">ឮ</a></li>
+					<li><a href="#">ឯ</a></li>
+					<li><a href="#">ឰ</a></li>
+					<li><a href="#">ឱ</a></li>
+					<li><a href="#">ឲ</a></li>
+					<li><a href="#">ឳ</a></li>
+					<li><a href="#">឴</a></li>
+					<li><a href="#">឵</a></li>
+					<li><a href="#">ា</a></li>
+					<li><a href="#">ិ</a></li>
+					<li><a href="#">ី</a></li>
+					<li><a href="#">ឹ</a></li>
+					<li><a href="#">ឺ</a></li>
+					<li><a href="#">ុ</a></li>
+					<li><a href="#">ូ</a></li>
+					<li><a href="#">ួ</a></li>
+					<li><a href="#">ើ</a></li>
+					<li><a href="#">ឿ</a></li>
+					<li><a href="#">ៀ</a></li>
+					<li><a href="#">េ</a></li>
+					<li><a href="#">ែ</a></li>
+					<li><a href="#">ៃ</a></li>
+					<li><a href="#">ោ</a></li>
+					<li><a href="#">ៅ</a></li>
+					<li><a href="#">ំ</a></li>
+					<li><a href="#">ះ</a></li>
+					<li><a href="#">ៈ</a></li>
+					<li><a href="#">៉</a></li>
+					<li><a href="#">៊</a></li>
+					<li><a href="#">់</a></li>
+					<li><a href="#">៌</a></li>
+					<li><a href="#">៍</a></li>
+					<li><a href="#">៎</a></li>
+					<li><a href="#">៏</a></li>
+					<li><a href="#">័</a></li>
+					<li><a href="#">៑</a></li>
+					<li><a href="#">្</a></li>
+					<li><a href="#">៓</a></li>
+					<li><a href="#">។</a></li>
+					<li><a href="#">៕</a></li>
+					<li><a href="#">៖</a></li>
+					<li><a href="#">ៗ</a></li>
+					<li><a href="#">៘</a></li>
+					<li><a href="#">៙</a></li>
+					<li><a href="#">៚</a></li>
+					<li><a href="#">៛</a></li>
+					<li><a href="#">ៜ</a></li>
+					<li><a href="#">៝</a></li>
+					<li><a href="#">០</a></li>
+					<li><a href="#">១</a></li>
+					<li><a href="#">២</a></li>
+					<li><a href="#">៣</a></li>
+					<li><a href="#">៤</a></li>
+					<li><a href="#">៥</a></li>
+					<li><a href="#">៦</a></li>
+					<li><a href="#">៧</a></li>
+					<li><a href="#">៨</a></li>
+					<li><a href="#">៩</a></li>
+					<li><a href="#">៰</a></li>
+					<li><a href="#">៱</a></li>
+					<li><a href="#">៲</a></li>
+					<li><a href="#">៳</a></li>
+					<li><a href="#">៴</a></li>
+					<li><a href="#">៵</a></li>
+					<li><a href="#">៶</a></li>
+					<li><a href="#">៷</a></li>
+					<li><a href="#">៸</a></li>
+					<li><a href="#">៹</a></li>
+				</ul>
+			</div>
+			<!-- //캄보디아어 -->
+
+			<!-- 태국어 -->
+			<div class="languageContents" style="display: none;">
+				<ul>
+					<li><a href="#">ๅ</a></li>
+					<li><a href="#">/</a></li>
+					<li><a href="#">_</a></li>
+					<li><a href="#">ภ</a></li>
+					<li><a href="#">ถ</a></li>
+					<li><a href="#">ุ</a></li>
+					<li><a href="#">ึ</a></li>
+					<li><a href="#">ค</a></li>
+					<li><a href="#">ต</a></li>
+					<li><a href="#">จ</a></li>
+					<li><a href="#">ข</a></li>
+					<li><a href="#">ช</a></li>
+					<li><a href="#">ๆ</a></li>
+					<li><a href="#">ไ</a></li>
+					<li><a href="#">ำ</a></li>
+					<li><a href="#">พ</a></li>
+					<li><a href="#">ะ</a></li>
+					<li><a href="#">ั</a></li>
+					<li><a href="#">ี</a></li>
+					<li><a href="#">ร</a></li>
+					<li><a href="#">น</a></li>
+					<li><a href="#">ย</a></li>
+					<li><a href="#">บ</a></li>
+					<li><a href="#">ล</a></li>
+					<li><a href="#">ฟ</a></li>
+					<li><a href="#">ห</a></li>
+					<li><a href="#">ก</a></li>
+					<li><a href="#">ด</a></li>
+					<li><a href="#">เ</a></li>
+					<li><a href="#">้</a></li>
+					<li><a href="#">่</a></li>
+					<li><a href="#">ส</a></li>
+					<li><a href="#">า</a></li>
+					<li><a href="#">ว</a></li>
+					<li><a href="#">ง</a></li>
+					<li><a href="#">ฃ</a></li>
+					<li><a href="#">ผ</a></li>
+					<li><a href="#">ป</a></li>
+					<li><a href="#">แ</a></li>
+					<li><a href="#">อ</a></li>
+					<li><a href="#">ิ</a></li>
+					<li><a href="#">ื</a></li>
+					<li><a href="#">ท</a></li>
+					<li><a href="#">ม</a></li>
+					<li><a href="#">ใ</a></li>
+					<li><a href="#">ฝ</a></li>
+					<li><a href="#">+</a></li>
+					<li><a href="#">๑</a></li>
+					<li><a href="#">๒</a></li>
+					<li><a href="#">๓</a></li>
+					<li><a href="#">๔</a></li>
+					<li><a href="#">ู</a></li>
+					<li><a href="#">฿</a></li>
+					<li><a href="#">๕</a></li>
+					<li><a href="#">๖</a></li>
+					<li><a href="#">๗</a></li>
+					<li><a href="#">๘</a></li>
+					<li><a href="#">๙</a></li>
+					<li><a href="#">๐</a></li>
+					<li><a href="#">"</a></li>
+					<li><a href="#">ฎ</a></li>
+					<li><a href="#">ฑ</a></li>
+					<li><a href="#">ธ</a></li>
+					<li><a href="#">ํ</a></li>
+					<li><a href="#">๊</a></li>
+					<li><a href="#">ณ</a></li>
+					<li><a href="#">ฯ</a></li>
+					<li><a href="#">ญ</a></li>
+					<li><a href="#">ฐ</a></li>
+					<li><a href="#">,</a></li>
+					<li><a href="#">ฤ</a></li>
+					<li><a href="#">ฆ</a></li>
+					<li><a href="#">ฏ</a></li>
+					<li><a href="#">โ</a></li>
+					<li><a href="#">ฌ</a></li>
+					<li><a href="#">็</a></li>
+					<li><a href="#">๋</a></li>
+					<li><a href="#">ษ</a></li>
+					<li><a href="#">ศ</a></li>
+					<li><a href="#">ซ</a></li>
+					<li><a href="#">.</a></li>
+					<li><a href="#">ฅ</a></li>
+					<li><a href="#">(</a></li>
+					<li><a href="#">)</a></li>
+					<li><a href="#">ฉ</a></li>
+					<li><a href="#">ฮ</a></li>
+					<li><a href="#">ฺ</a></li>
+					<li><a href="#">์</a></li>
+					<li><a href="#">?</a></li>
+					<li><a href="#">ฒ</a></li>
+					<li><a href="#">ฬ</a></li>
+					<li><a href="#">ฦ</a></li>
+				</ul>
+			</div>
+			<!-- //태국어 -->
+			<a href="#close" class="btnClose"><span class="blind">닫기</span></a>
+		</div>
+	</fieldset>
+</div>
+								<!-- // 다국어 키보드  -->
+							</div>
+
+							<!-- 도서관 선택 -->
+							<div class="searchBotarea">
+								
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="box_choice">
+	<dl>
+		<dt><a href="#btn" class="sh_lib">도서관 목록</a></dt>
+		<dd><div class="selc_lib"></div></dd>
+	</dl>
+</div>
+<div class="box_checkWrap">
+	<ul class="list">
+		<li>
+			<dl class="box_check">
+				<dt>도서관 선택</dt>
+				<dd>
+					<input type="checkbox" name="searchManageCode" id="searchManageCode" value="ALL" class="check selc_all" >
+					<label for="searchManageCode"><strong>전체 도서관</strong></label>
+				</dd>
+			</dl>
+		</li>
+		<li>
+			<dl class="box_check">
+				<dt>구립도서관</dt>
+				<dd>
+					<ol class="finder_lib">
+						
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr2" value="MA" class="check"
+											
+												 checked
+											
+										>
+										<label for="searchManageCodeArr2">서대문구립이진아기념도서관</label>
+									</li>
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr3" value="MB" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr3">새롬어린이도서관</label>
+									</li>
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr4" value="MC" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr4">홍은도담도서관</label>
+									</li>
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+					</ol>
+				</dd>
+			</dl>
+		</li>
+		<li>
+			<dl class="box_check">
+				<dt>작은도서관</dt>
+				<dd>
+					<ol class="finder_lib">
+						
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr5" value="SA" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr5">알음알음작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr6" value="SB" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr6">하늘샘작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr7" value="SC" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr7">북아현 마을북카페</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr8" value="SM" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr8">늘푸른 열린 작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr9" value="SE" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr9">아이누리작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr10" value="SK" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr10">파랑새작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr11" value="SN" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr11">가슴따뜻한 작은 도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr12" value="SR" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr12">이팝꽃향기작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr13" value="SP" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr13">논골작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr14" value="SF" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr14">새싹작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr15" value="SJ" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr15">행복작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr16" value="SG" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr16">꿈이있는도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr17" value="SH" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr17">문화촌작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr18" value="SI" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr18">햇살작은도서관</label>
+									</li>
+									
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+								
+								
+							
+						
+					</ol>
+				</dd>
+			</dl>
+		</li>
+		<li>
+			<dl class="box_check">
+				<dt>스마트도서관</dt>
+				<dd>
+					<ol class="finder_lib">
+						
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr19" value="MD" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr19">아현역스마트도서관</label>
+									</li>
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr20" value="ME" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr20">홍제역스마트도서관</label>
+									</li>
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr21" value="MF" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr21">독립문역스마트도서관</label>
+									</li>
+								
+							
+						
+							
+								
+									<li>
+										<input type="checkbox" name="searchManageCodeArr" id="searchManageCodeArr22" value="SS" class="check"
+											
+												
+											
+										>
+										<label for="searchManageCodeArr22">구청스마트도서관</label>
+									</li>
+								
+							
+						
+					</ol>
+				</dd>
+			</dl>
+		</li>
+	</ul>
+	<a href="#btn" id="librarySearchBtn" class="apply">적용</a>
+</div>
+
+							</div>
+							<!-- //도서관 선택 -->
+						</div>
+
+
+						<div class="left">
+							<div class="searchResultWrap">
+								<div class="result_box">
+									<div class="tabNav" style="display:block">
+										<div class="tabNavInner">
+											<ul class="tnb clearfix">
+												
+													<li class="choiced">
+														<a href="#link" onclick="javascript:fnSearchPubFormCode('ALL'); return false;">
+															<span>전체<br class="mobileShow3">(12)</span>
+														</a>
+													</li>
+												
+													<li >
+														<a href="#link" onclick="javascript:fnSearchPubFormCode('MO'); return false;">
+															<span>단행본<br class="mobileShow3">(9)</span>
+														</a>
+													</li>
+												
+													<li >
+														<a href="#link" onclick="javascript:fnSearchPubFormCode('EB'); return false;">
+															<span>전자책<br class="mobileShow3">(3)</span>
+														</a>
+													</li>
+												
+													<li >
+														<a href="#link" onclick="javascript:fnSearchPubFormCode('AU'); return false;">
+															<span>오디오북<br class="mobileShow3">(0)</span>
+														</a>
+													</li>
+												
+													<li >
+														<a href="#link" onclick="javascript:fnSearchPubFormCode('DV'); return false;">
+															<span>DVD<br class="mobileShow3">(0)</span>
+														</a>
+													</li>
+												
+											</ul>
+										</div>
+									</div>
+									<div class="listSetting">
+										
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+			
+			
+				
+			
+		
+	
+	
+	
+	
+
+
+
+
+<div class="result_screen">
+	
+		'<strong class="highlight">불편한 편의점</strong>'에 대한
+	
+	검색결과 총 <span class="highlight">12</span> 건
+</div>
+									</div>
+
+									<!-- 검색결과 제한  -->
+									
+										<div class="pasitNavi">
+											<a href="#btn" class="" title="검색결과 제한 축소됨"><span>검색결과 제한</span></a>
+										</div>
+									
+									
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="finder_area">
+	<div id="_filter" class="finder">
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">자료유형</h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsContentsType1" name="searchAggsContentsTypeArr" value="단행본" class="check"><label for="aggsContentsType1">단행본</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsContentsType2" name="searchAggsContentsTypeArr" value="전자책" class="check"><label for="aggsContentsType2">전자책</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">저자<a href="javascript:;" class="btn_extend _filter_more"><span>더보기</span></a></h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsAuthor1" name="searchAggsAuthorArr" value="김호연" class="check"><label for="aggsAuthor1">김호연</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsAuthor2" name="searchAggsAuthorArr" value="คิมโฮย็อน" class="check"><label for="aggsAuthor2">คิมโฮย็อน</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">발행처<a href="javascript:;" class="btn_extend _filter_more" ><span>더보기</span></a>
+			</h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsPublisher1" name="searchAggsPublisherArr" value="나무옆의자" class="check"><label for="aggsPublisher1">나무옆의자</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsPublisher2" name="searchAggsPublisherArr" value="PICCOLO" class="check"><label for="aggsPublisher2">PICCOLO</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row year">
+			<h3 class="finder_tit">발행연도</h3>
+			<ul class="finder_list">
+				<li class="year_wrap">
+					<div class="year_search">
+						<input type="text" name="searchAggsFromPubYear" class="y_input numeric" title="최소 발행연도" maxlength="4" value="2021">
+						<span>~</span>
+						<input type="text" name="searchAggsToPubYear" class="y_input2 numeric" title="최대 발행연도" maxlength="4" value="2022">
+						<button type="button" id="aggsPubYearSearchBtn" class="button"></button>
+					</div>
+				</li>
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">언어</h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsTextLang1" name="searchAggsTextLangArr" value="한국어" class="check"><label for="aggsTextLang1">한국어</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsTextLang2" name="searchAggsTextLangArr" value="기타" class="check"><label for="aggsTextLang2">기타</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">주제분류<a href="javascript:;" class="btn_extend _filter_more" ><span>더보기</span></a></h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsClassNoDesc1" name="searchAggsClassNoDescArr" value="문학" class="check"><label for="aggsClassNoDesc1">문학</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">주제어<a href="javascript:;" class="btn_extend _filter_more" ><span>더보기</span></a></h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword1" name="searchAggsKeywordArr" value="한국문학" class="check"><label for="aggsKeyword1">한국문학</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword2" name="searchAggsKeywordArr" value="나비효과" class="check"><label for="aggsKeyword2">나비효과</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword3" name="searchAggsKeywordArr" value="위로" class="check"><label for="aggsKeyword3">위로</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword4" name="searchAggsKeywordArr" value="한국현대소설" class="check"><label for="aggsKeyword4">한국현대소설</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword5" name="searchAggsKeywordArr" value="장편소설" class="check"><label for="aggsKeyword5">장편소설</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword6" name="searchAggsKeywordArr" value="편의점" class="check"><label for="aggsKeyword6">편의점</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword7" name="searchAggsKeywordArr" value="한국소설" class="check"><label for="aggsKeyword7">한국소설</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword8" name="searchAggsKeywordArr" value="대활자" class="check"><label for="aggsKeyword8">대활자</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword9" name="searchAggsKeywordArr" value="큰글씨" class="check"><label for="aggsKeyword9">큰글씨</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword10" name="searchAggsKeywordArr" value="다문화도서" class="check"><label for="aggsKeyword10">다문화도서</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword11" name="searchAggsKeywordArr" value="불편" class="check"><label for="aggsKeyword11">불편</label>
+					</li>
+				
+					<li>
+						<input type="checkbox" id="aggsKeyword12" name="searchAggsKeywordArr" value="태국도서" class="check"><label for="aggsKeyword12">태국도서</label>
+					</li>
+				
+			</ul>
+		</div>
+
+		<div class="finder_col _filter_row">
+			<h3 class="finder_tit">총서명<a href="javascript:;" class="btn_extend _filter_more" ><span>더보기</span></a></h3>
+			<ul class="finder_list">
+				
+					<li>
+						<input type="checkbox" id="aggsTotalTitle1" name="searchAggsTotalTitleArr" value="리더스 원" class="check"><label for="aggsTotalTitle1">리더스 원</label>
+					</li>
+				
+			</ul>
+		</div>
+	</div>
+
+	<div class="category_tit">
+		<p><a class="clear" href="#btn">전체해제 <span class="ico_clear"></span></a></p>
+		<div class="selc_object">
+		</div>
+		<a href="#btn" id="aggsSearchBtn" class="btn">적용</a>
+	</div>
+	<div class="pasit_dim"></div>
+</div>
+									<!-- 검색결과 제한  -->
+
+									<div class="listStyleTypeWrap clearfix">
+										<div class="excelDowan mobileHide"><a href="#btn" id="excelBtn">엑셀목록 저장</a></div>
+										<div class="listStyleType">
+											<p class="HanChange">
+												<span class="langKor on" data-name="kor" title="선택됨"><a href="#kor"><b class="blind">한글 변환</b>가</a></span>
+												<span class="langHan" data-name="han"><a href="#han"><b class="blind">한자 변환</b>漢</a></span>
+											</p>
+											<select id="searchArticle" name="searchArticle" title="정렬조건 선택">
+												<option value="SCORE" selected="selected">적합도</option>
+												
+													<option value="RECENT" >최신순</option>
+												
+												<option value="TITLE" >서명</option>
+												<option value="AUTHOR" >저자</option>
+												<option value="PUBLISHER" >발행처</option>
+												<option value="PUBYEAR" >발행일</option>
+											</select>
+											<select id="searchOrder" name="searchOrder" class="orderSel" title="정렬순서 선택">
+												<option value="ASC" selected="selected">오름차순</option>
+												<option value="DESC" >내림차순</option>
+											</select>
+											<select id="searchDisplay" name="searchDisplay" class="numSel" title="정렬개수 선택">
+												
+													<option value="20" selected="selected">20건</option>
+												
+													<option value="40" >40건</option>
+												
+													<option value="60" >60건</option>
+												
+													<option value="80" >80건</option>
+												
+											</select>
+											<a href="#btn" id="sortListBtn" class="btn">확인</a>
+											<div class="btnSetmob">
+												<span class="mobPasit">검색결과 제한</span>
+												<span class="mobListType listTypeList on" onclick="javascript:fnMobileViewType('CARD'); return false;">리스트형</span>
+												<span class="mobListType listTypeCard " onclick="javascript:fnMobileViewType('LIST'); return false;">이미지형</span>
+											</div>
+											<div class="btnSetWeb">
+												<a href="#list" class="listTypeList on" id="viewTypeList" title="선택됨"><span class="blind">리스트형</span></a>
+												<a href="#img" class="listTypeCard " id="viewTypeCard"><span class="blind">이미지형</span></a>
+											</div>
+										</div>
+									</div>
+
+								</div>
+							</div>
+							</form>
+							<!--
+								listViewStyle   ,   cardViewStyle
+								리스트 스타일         카드 스타일
+							-->
+							
+								
+								
+									<div id="bookList">
+										
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	function fnCollectionInfo(count, speciesKey){
+		$("#collectionInfo"+count).load("/search/include/collectionBookList.do", {speciesKey : speciesKey}, fnLoadCallback);
+	}
+
+	function fnBibliographicInfo(count, bookKey, pubFormCode){
+		$("#bibliographicInfo"+count).load("/search/include/bibliographicInfo.do", {bookKey : bookKey, pubFormCode : pubFormCode});
+	}
+
+	function fnLoadCallback(){
+		$('.thisBook-libraryselecter > a').removeClass('on');
+		$('.thisBook-libraryselecter p a').addClass("on");
+		$('.thisBook-libraryList tbody tr').css('display','table-row');
+
+		// 소장정보 도서관 리스트 높이조절
+		$('.listDropdown').on("click", function(){
+			if(!$(this).hasClass("on")) {
+				$(this).addClass('on').attr("title", "확장됨");
+				$('.thisBook-libraryselecter').addClass('open');
+			} else {
+				$(this).removeClass('on').attr("title", "축소됨");;
+				$('.thisBook-libraryselecter').removeClass('open');
+			}
+		});
+
+		// PC 소장정보 도서관별 구분 view/hide
+		// 전체도서관 클릭시
+		$('.thisBook-libraryselecter p a').on("click", function(){
+			$(this).addClass("on");
+			$('.thisBook-libraryList tbody tr').css('display','table-row');
+			$('.thisBook-libraryselecter > a').removeClass('on');
+		});
+		// 각 도서관 클릭시
+		$('.thisBook-libraryselecter > a').on("click", function(){
+			if($('.thisBook-libraryselecter p a').hasClass("on")) {
+				$('.thisBook-libraryselecter p a').removeClass("on");
+				$('.thisBook-libraryList tbody tr').css('display','none');
+			}
+			var name = $(this).data("name");
+			if(!$(this).hasClass("on")) {
+				$(this).addClass("on").attr("title", "선택됨");
+				$('.thisBook-libraryList tbody tr' + '.' + name).css('display','table-row');
+			} else {
+				$(this).removeClass("on").attr("title", "선택해제");
+				$('.thisBook-libraryList tbody tr' + '.' + name).css('display','none');
+			}
+			// 선택한 도서관 없을때 전체보여지기
+			if(!$('.thisBook-libraryselecter > a').hasClass("on")) {
+				$('.thisBook-libraryselecter p a').addClass("on");
+				$('.thisBook-libraryList tbody tr').css('display','table-row');
+			}
+		});
+	}
+
+	function fnReservationApply(bookKey, regNo) {
+		if(isEmpty("")) {
+			alert("로그인 후 이용가능합니다.");
+			return false;
+		}
+		if(isEmpty("")) {
+			alert("도서관 대출회원만 이용가능합니다.");
+			return false;
+		}
+		fnReservationApplyProc(bookKey, regNo);
+	}
+
+	function fnMutualLoanApply(bookKey, regNo, switchBookYn) {
+		if(isEmpty("")) {
+			alert("로그인 후 이용가능합니다.");
+			return false;
+		}
+		if(isEmpty("")) {
+			alert("도서관 대출회원만 이용가능합니다.");
+			return false;
+		}
+		fnMutualLoanApplyPop(bookKey, regNo, switchBookYn);
+	}
+
+	function fnBaroLoanApply(bookKey, regNo) {
+		var siteCd = "sdmlib";
+
+		if(isEmpty("")) {
+			alert("로그인 후 이용가능합니다.");
+			return false;
+		}
+		if(isEmpty("")) {
+			alert("도서관 대출회원만 이용가능합니다.");
+			return false;
+		}
+		fnBaroLoanApplyPop(bookKey, regNo, siteCd);
+	}
+
+	function fnBookmark(bookKey, speciesKey, isbn) {
+		if(isEmpty("")) {
+			alert("로그인 후 이용가능합니다.");
+			return false;
+		}
+		if(isEmpty("")) {
+			alert("도서관 대출회원만 이용가능합니다.");
+			return false;
+		}
+		fnBookmarkPop(bookKey, speciesKey, isbn);
+	}
+
+	function fnEbookLink(barcode){
+		var form = document.ebookForm;
+
+		form.barcode.value = barcode;
+
+		if(isEmpty("")) {
+			alert("로그인 후 이용하시기 바랍니다.");
+			return false;
+		}
+
+		if(isEmpty("")) {
+			alert("정회원만 이용가능합니다.");
+			return false;
+		}
+
+		form.submit();
+	}
+
+	function fnAudioLink(barcode){
+		var form = document.audiobookForm;
+
+		form.bookId.value = barcode;
+
+		if(isEmpty("")) {
+			alert("로그인 후 이용하시기 바랍니다.");
+			return false;
+		}
+
+		form.submit();
+	}
+</script>
+<form name="ebookForm" action="https://ebook.sdm.or.kr/Login_check.asp" method="post" target="_blank">
+	<input type="hidden" name="user_id" value="" />
+	<input type="hidden" name="user_name" value="" />
+	<input type="hidden" name="user_type" value="" />
+	
+	
+		
+		
+		
+	
+	<input type="hidden" name="barcode">
+</form>
+<form name="audiobookForm" action="http://w.asp.audien.com/wpoc/mainDetail.htm" method="get" target="_blank">
+	<input type="hidden" name="paId" value="48d7a2fbc5b44ca250eb">
+	<input type="hidden" name="userId" value="">
+	<input type="hidden" name="bookId" >
+</form>
+<div class="bookList listViewStyle">
+	<ul class="listWrap">
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('417869985', '417869983', '9791161571188', 'EB');">
+							<img alt="불편한 편의점 : 김호연 장편소설" src="https://bookthumb-phinf.pstatic.net/cover/189/260/18926010.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('417869985', '417869983', '9791161571188', 'EB');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('417869985', '417869983', '9791161571188', 'EB');" title="불편한 편의점 : 김호연 장편소설">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('417869985', '417869983', '9791161571188', 'EB');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000011092</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('417869985', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000011092</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('417869985', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[서대문구립이진아기념도서관] 디지털도서관(온라인)</span></p>
+								<p class="han"><span><b class="themeFC">[서대문구립이진아기념도서관] </b>디지털도서관(온라인)</span></p>
+							</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											소장자료<span>(전자도서관)</span>
+										</strong>
+										
+											
+											
+											
+												<b>소장자료</b>
+											
+										
+									</span>
+								</li>
+								
+								
+								
+									<li><a href="#btn" onclick="fnEbookLink('4801161571189');" class="btn_original themeBtn2" title="원문보기">원문보기</a></li>
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('417869985', '417869983', '9791161571188'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('1', '417869983');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('1', '417869985', 'EB');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo1" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo1" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('425147031', '425147029', '9791161571195', 'EB');">
+							<img alt="불편한 편의점 김호연 장편소설 " src="https://image.aladin.co.kr/product/27081/4/cover/e972538100_1.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('425147031', '425147029', '9791161571195', 'EB');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 김호연 장편소설 </span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('425147031', '425147029', '9791161571195', 'EB');" title="불편한 편의점 김호연 장편소설 ">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> 김호연 장편소설 
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('425147031', '425147029', '9791161571195', 'EB');" title="<span class='highlight word'>불편한 편의점</span> 김호연 장편소설 ">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> 김호연 장편소설 
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000011765</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('425147031', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000011765</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('425147031', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[서대문구립이진아기념도서관] 디지털도서관(온라인)</span></p>
+								<p class="han"><span><b class="themeFC">[서대문구립이진아기념도서관] </b>디지털도서관(온라인)</span></p>
+							</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											소장자료<span>(전자도서관)</span>
+										</strong>
+										
+											
+											
+											
+												<b>소장자료</b>
+											
+										
+									</span>
+								</li>
+								
+								
+								
+									<li><a href="#btn" onclick="fnEbookLink('4801161571189');" class="btn_original themeBtn2" title="원문보기">원문보기</a></li>
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('425147031', '425147029', '9791161571195'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('2', '425147029');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('2', '425147031', 'EB');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo2" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo2" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('424120770', '424120767', '9791161571379', 'MO');">
+							<img alt="불편한 편의점 : 김호연 장편소설. 2" src="https://image.aladin.co.kr/product/29858/98/cover/k432838027_2.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('424120770', '424120767', '9791161571379', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설. 2</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('424120770', '424120767', '9791161571379', 'MO');" title="불편한 편의점 : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('424120770', '424120767', '9791161571379', 'MO');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000112734</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2=2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424120770', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000112734</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2=2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424120770', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 6명</span>
+										
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 6명</span>
+										
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('424120770','EM0000112734'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('424120770', '424120767', '9791161571379'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('3', '424120767');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('3', '424120770', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo3" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo3" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('408478644', '408478642', '9791161571188', 'MO');">
+							<img alt="불편한 편의점 : 김호연 장편소설" src="https://bookthumb-phinf.pstatic.net/cover/189/260/18926010.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('408478644', '408478642', '9791161571188', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('408478644', '408478642', '9791161571188', 'MO');" title="불편한 편의점 : 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('408478644', '408478642', '9791161571188', 'MO');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000108907</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('408478644', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000108907</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('408478644', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 3명</span>
+										
+										
+											<span>반납예정일 : 2023.08.27</span>
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 3명</span>
+										
+										
+											<span>반납예정일 : 2023.08.27</span>
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('408478644','EM0000108907'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('408478644', '408478642', '9791161571188'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('4', '408478642');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('4', '408478644', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo4" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo4" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('419161046', '419161044', '9791161571188', 'MO');">
+							<img alt="불편한 편의점: 김호연 장편소설" src="https://bookthumb-phinf.pstatic.net/cover/189/260/18926010.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('419161046', '419161044', '9791161571188', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점: 김호연 장편소설</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('419161046', '419161044', '9791161571188', 'MO');" title="불편한 편의점: 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('419161046', '419161044', '9791161571188', 'MO');" title="<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000110706</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('419161046', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000110706</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('419161046', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 1명</span>
+										
+										
+											<span>반납예정일 : 2023.09.05</span>
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 1명</span>
+										
+										
+											<span>반납예정일 : 2023.09.05</span>
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('419161046','EM0000110706'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('419161046', '419161044', '9791161571188'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('5', '419161044');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('5', '419161046', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo5" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo5" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('424120623', '424120621', '9791161571379', 'MO');">
+							<img alt="불편한 편의점 : 김호연 장편소설. 2" src="https://image.aladin.co.kr/product/29858/98/cover/k432838027_2.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('424120623', '424120621', '9791161571379', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설. 2</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('424120623', '424120621', '9791161571379', 'MO');" title="불편한 편의점 : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('424120623', '424120621', '9791161571379', 'MO');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000112706</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424120623', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000112706</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424120623', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 4명</span>
+										
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 4명</span>
+										
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('424120623','EM0000112706'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('424120623', '424120621', '9791161571379'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('6', '424120621');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('6', '424120623', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo6" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo6" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('422230176', '422230174', '9791161571188', 'MO');">
+							<img alt="불편한 편의점 : 김호연 장편소설" src="https://bookthumb-phinf.pstatic.net/cover/189/260/18926010.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('422230176', '422230174', '9791161571188', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('422230176', '422230174', '9791161571188', 'MO');" title="불편한 편의점 : 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('422230176', '422230174', '9791161571188', 'MO');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000111094</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ=3</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('422230176', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000111094</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ=3</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('422230176', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 3명</span>
+										
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 3명</span>
+										
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('422230176','EM0000111094'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('422230176', '422230174', '9791161571188'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('7', '422230174');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('7', '422230176', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo7" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo7" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('424545568', '424545566', '9791161571379', 'MO');">
+							<img alt="불편한 편의점 : 김호연 장편소설. 2" src="https://image.aladin.co.kr/product/29858/98/cover/k432838027_2.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('424545568', '424545566', '9791161571379', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설. 2</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('424545568', '424545566', '9791161571379', 'MO');" title="불편한 편의점 : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('424545568', '424545566', '9791161571379', 'MO');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설. 2
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000113519</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2=3</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424545568', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EM0000113519</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ-2=3</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424545568', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실Ⅰ(3층)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실Ⅰ(3층)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 5명</span>
+										
+										
+											<span>반납예정일 : 2023.09.03</span>
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 5명</span>
+										
+										
+											<span>반납예정일 : 2023.09.03</span>
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(예약중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('424545568','EM0000113519'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('424545568', '424545566', '9791161571379'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('8', '424545566');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('8', '424545568', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo8" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo8" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('427774258', '427774256', '9791161571454', 'MO');">
+							<img alt="불편한 편의점: 김호연 장편소설: 큰글자도서. 2" src="https://image.aladin.co.kr/product/31196/36/cover/k122831050_1.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('427774258', '427774256', '9791161571454', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점: 김호연 장편소설: 큰글자도서. 2</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('427774258', '427774256', '9791161571454', 'MO');" title="불편한 편의점: 김호연 장편소설: 큰글자도서. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 2
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('427774258', '427774256', '9791161571454', 'MO');" title="<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 2">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 2
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">KA0000002701</span>
+									<span class="mobileHide">큰글 813.6-ㄱ989ㅂ-2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('427774258', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">KA0000002701</span>
+									<span class="mobileHide">큰글 813.6-ㄱ989ㅂ-2</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('427774258', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실(3층 신간도서 코너)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실(3층 신간도서 코너)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 0명</span>
+										
+										
+											<span>반납예정일 : 2023.09.05</span>
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 0명</span>
+										
+										
+											<span>반납예정일 : 2023.09.05</span>
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(상호대차중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('427774258','KA0000002701'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('427774258', '427774256', '9791161571454'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('9', '427774256');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('9', '427774258', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo9" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo9" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('427774255', '427774253', '9791161571331', 'MO');">
+							<img alt="불편한 편의점: 김호연 장편소설: 큰글자도서. 1" src="https://shopping-phinf.pstatic.net/main_3333941/33339415619.20221019123915.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('427774255', '427774253', '9791161571331', 'MO');" class="cardViewLinkBtn"><span class="blind">불편한 편의점: 김호연 장편소설: 큰글자도서. 1</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('427774255', '427774253', '9791161571331', 'MO');" title="불편한 편의점: 김호연 장편소설: 큰글자도서. 1">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 1
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('427774255', '427774253', '9791161571331', 'MO');" title="<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 1">
+										<b class="book_kind">단행본</b>
+										<span class='highlight word'>불편한 편의점</span>: 김호연 장편소설: 큰글자도서. 1
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">KA0000002702</span>
+									<span class="mobileHide">큰글 813.6-ㄱ989ㅂ-1</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('427774255', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">KA0000002702</span>
+									<span class="mobileHide">큰글 813.6-ㄱ989ㅂ-1</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('427774255', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 본관_종합자료실(3층 신간도서 코너)</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>본관_종합자료실(3층 신간도서 코너)</span></p>
+							</div>
+							
+								<div class="book_info info03">
+									<p class="kor on">
+										
+											<span>예약 : 0명</span>
+										
+										
+											<span>반납예정일 : 2023.09.09</span>
+										
+									</p>
+									<p class="han">
+										
+											<span>예약 : 0명</span>
+										
+										
+											<span>반납예정일 : 2023.09.09</span>
+										
+									</p>
+								</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출불가<span>(대출중)</span>
+										</strong>
+										
+											
+												<b>대출예약 신청</b>
+											
+											
+											
+										
+									</span>
+								</li>
+								
+									<li><a href="#apply" onclick="javascript:fnReservationApply('427774255','KA0000002702'); return false;" class="btn_reserveOK themeBtn2" >대출예약 신청</a></li>
+								
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('427774255', '427774253', '9791161571331'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('10', '427774253');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('10', '427774255', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo10" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo10" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('408699026', '408699024', '9791161571188', 'EB');">
+							<img alt="불편한 편의점 : 김호연 장편소설" src="https://bookthumb-phinf.pstatic.net/cover/189/260/18926010.jpg" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('408699026', '408699024', '9791161571188', 'EB');" class="cardViewLinkBtn"><span class="blind">불편한 편의점 : 김호연 장편소설</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('408699026', '408699024', '9791161571188', 'EB');" title="불편한 편의점 : 김호연 장편소설">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('408699026', '408699024', '9791161571188', 'EB');" title="<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설">
+										<b class="book_kind">전자책</b>
+										<span class='highlight word'>불편한 편의점</span> : 김호연 장편소설
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>김호연 지음</span></p>
+								<p class="han"><span>김호연 지음</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000008761</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('408699026', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>나무옆의자</span>
+									<span>2021</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">EB0000008761</span>
+									<span class="mobileHide">813.6-ㄱ989ㅂ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('408699026', 'EB'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[서대문구립이진아기념도서관] 디지털도서관(온라인)</span></p>
+								<p class="han"><span><b class="themeFC">[서대문구립이진아기념도서관] </b>디지털도서관(온라인)</span></p>
+							</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent2">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											소장자료<span>(전자도서관)</span>
+										</strong>
+										
+											
+											
+											
+												<b>소장자료</b>
+											
+										
+									</span>
+								</li>
+								
+								
+								
+									<li><a href="#btn" onclick="fnEbookLink('4801161571189');" class="btn_original themeBtn2" title="원문보기">원문보기</a></li>
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('408699026', '408699024', '9791161571188'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('11', '408699024');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('11', '408699026', 'EB');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo11" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo11" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+			<li>
+				<div class="bookArea">
+					<div class="bookImg">
+						<a href="#link" onclick="fnDetail('424939250', '424939248', '9786161848859', 'MO');">
+							<img alt="ร้านไม่สะดวกซื้อของคุณทกโก" src="http://info.libropia.co.kr/resources/images/cover/no-image-MO.png" onerror="javascript:fnNoImgBook(this); return false;">
+						</a>
+					</div>
+					<div class="bookData">
+						<a href="#link" onclick="fnDetail('424939250', '424939248', '9786161848859', 'MO');" class="cardViewLinkBtn"><span class="blind">ร้านไม่สะดวกซื้อของคุณทกโก</span></a>
+						<div class="book_dataInner">
+							<div class="book_name">
+								<p class="kor on">
+									<a href="#link" onclick="fnDetail('424939250', '424939248', '9786161848859', 'MO');" title="ร้านไม่สะดวกซื้อของคุณทกโก">
+										<b class="book_kind">단행본</b>
+										ร้านไม่สะดวกซื้อของคุณทกโก
+									</a>
+								</p>
+								<p class="han">
+									<a href="#link" onclick="fnDetail('424939250', '424939248', '9786161848859', 'MO');" title="ร้านไม่สะดวกซื้อของคุณทกโก">
+										<b class="book_kind">단행본</b>
+										ร้านไม่สะดวกซื้อของคุณทกโก
+									</a>
+								</p>
+							</div>
+
+							<div class="book_info info01">
+								<p class="kor on"><span>เขียน: คิมโฮย็อน; แปล: มินตรา อินทรารัตน์</span></p>
+								<p class="han"><span>เขียน: คิมโฮย็อน; แปล: มินตรา อินทรารัตน์</span></p>
+							</div>
+							<div class="book_info info02">
+								<p class="kor on">
+									<span>Piccolo</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">XM0000002001</span>
+									<span class="mobileHide">THA 813.7-ㄱ989ㄹ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424939250', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+								<p class="han">
+									<span>Piccolo</span>
+									<span>2022</span>
+									<span class="mobileHide">부록없음</span>
+									<span class="mobileHide">XM0000002001</span>
+									<span class="mobileHide">THA 813.7-ㄱ989ㄹ</span>
+									<a class="print mobileHide" href="#pop" onclick="javascript:fnCallNoPrintPop('424939250', 'MO'); return false;" title="새창열림">위치출력</a>
+								</p>
+							</div>
+							<div class="book_info info03">
+								<p class="kor on"><span>[구립이진아] 다문화자료실</span></p>
+								<p class="han"><span><b class="themeFC">[구립이진아] </b>다문화자료실</span></p>
+							</div>
+							
+						</div>
+						<!-- ##대출(상호대차)가능 .sRent1 / 대출(상호대차)불가/예약가능 .sRent2 ## -->
+						<div class="bookBtnWrap sRent1">
+							<ul class="clearfix">
+								<li class="title">
+									<span class="status">
+										<strong>
+											대출가능<span>(비치중)</span>
+										</strong>
+										
+											
+											
+												<b>상호대차 신청</b>
+											
+											
+										
+									</span>
+								</li>
+								
+								
+									<li><a href="#apply" onclick="javascript:fnMutualLoanApply('424939250','XM0000002001','N'); return false;" class="btn_rentOK themeBtn4" title="새창열림">상호대차 신청</a></li>
+								
+								
+								
+
+								
+									<li><a href="#pop" onclick="javascript:fnBookmark('424939250', '424939248', '9786161848859'); return false;" class="btn_mylibrary" title="새창열림">관심도서담기</a></li>
+								
+							</ul>
+						</div>
+
+						<div class="bookDetailInfo">
+							<ul class="clearfix">
+								<li><a href="#btn" onclick="fnCollectionInfo('12', '424939248');" class="btn_haveInfo">소장정보</a></li>
+								<li><a href="#btn" onclick="fnBibliographicInfo('12', '424939250', 'MO');" class="btn_sergeInfo">서지정보</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<!-- 소장정보 -->
+				<div id="collectionInfo12" class="bookDetailLayer whereLibrary"></div>
+				<!-- 서지정보 -->
+				<div id="bibliographicInfo12" class="bookDetailLayer bibliographicInfo"></div>
+			</li>
+		
+		
+	</ul>
+</div>
+<!-- 페이징 -->
+<div class="pagingWrap">
+	<p class="paging"><span class="current">1</span>
+
+</p>
+</div>
+<!-- //페이징 -->
+
+									</div>
+								
+							
+						</div>
+					<div class="right">
+						
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+	$(function(){
+		$("#themeWrap").load("/sdmlib/include/searchResultSideTheme.do");
+	});
+</script>
+<div id="rnbSearch" class="rnbSearch">
+	<div class="searchListWrap">
+		<!-- 인기검색어 -->
+		<div class="keywordWrap">
+			<h3 class="tit"><span class="themeFC">인기</span>검색어</h3>
+			<div class="desc">
+				<ol class="kwdList" id="popword">
+					
+						<li>
+							<i class="num">1</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('흔한남매'); return false;">흔한남매</a>
+						</li>
+					
+						<li>
+							<i class="num">2</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('불편한 편의점'); return false;">불편한 편의점</a>
+						</li>
+					
+						<li>
+							<i class="num">3</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('에그박사'); return false;">에그박사</a>
+						</li>
+					
+						<li>
+							<i class="num">4</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('지대넓얕'); return false;">지대넓얕</a>
+						</li>
+					
+						<li>
+							<i class="num">5</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('깜냥'); return false;">깜냥</a>
+						</li>
+					
+						<li>
+							<i class="num">6</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('파친코'); return false;">파친코</a>
+						</li>
+					
+						<li>
+							<i class="num">7</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('똥볶이'); return false;">똥볶이</a>
+						</li>
+					
+						<li>
+							<i class="num">8</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('불편한편의점'); return false;">불편한편의점</a>
+						</li>
+					
+						<li>
+							<i class="num">9</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('백희나'); return false;">백희나</a>
+						</li>
+					
+						<li>
+							<i class="num">10</i>
+							<a href="#link" onclick="javascript:fnSearchKeyword('놓지마 과학'); return false;">놓지마 과학</a>
+						</li>
+					
+				</ol>
+			</div>
+		</div>
+		<!-- //인기검색어 -->
+
+		<!-- 연관검색어 -->
+		<div class="keywordWrap">
+			<h3 class="tit"><span class="themeFC">연관</span>검색어</h3>
+			<div class="desc">
+			
+				
+					
+						
+						<a href="#link" onclick="javascript:fnSearchKeyword('한국소설'); return false;">한국소설</a>
+					
+						, 
+						<a href="#link" onclick="javascript:fnSearchKeyword('위로'); return false;">위로</a>
+					
+						, 
+						<a href="#link" onclick="javascript:fnSearchKeyword('장편소설'); return false;">장편소설</a>
+					
+						, 
+						<a href="#link" onclick="javascript:fnSearchKeyword('한국문학'); return false;">한국문학</a>
+					
+						, 
+						<a href="#link" onclick="javascript:fnSearchKeyword('편의점'); return false;">편의점</a>
+					
+						, 
+						<a href="#link" onclick="javascript:fnSearchKeyword('다문화도서'); return false;">다문화도서</a>
+					
+				
+				
+			
+			</div>
+		</div>
+		<!-- //연관검색어 -->
+
+		<!-- 날씨, 이런책은어떠세요-->
+		<div id="themeWrap"></div>
+		<!-- //날씨, 이런책은어떠세요-->
+	</div>
+</div>
+
+					</div>
+				</div>
+				<!-- End Of the Real Contents-->
+			</div>
+		</div>
+	</div>
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 담당자 -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- //담당자 -->
+
+<!-- footer -->
+<footer id="footer">
+	<div class="fnbWrap">
+		<div class="footerInner clearfix">
+			<ul class="fnb clearfix">
+				<li><a href="/sdmlib/menu/10169/contents/40041/contents.do">이용약관</a></li>
+				<li><a href="https://www.sscmc.or.kr/page/intro/sub6_5_8_1.php" title="새창열림" target="_blank"><span>개인정보처리방침</span></a></li>
+				<li><a href="/sdmlib/menu/10171/contents/40043/contents.do">이메일무단수집거부</a></li>
+			</ul>
+			<div class="familySite mobileHide">
+				<a href="#open">관련사이트</a>
+				<ul>
+					<li><a href="https://www.sscmc.or.kr/main.asp" title="새창열림" target="_blank">서대문구도시관리공단 </a></li>
+					<li><a href="https://www.sdm.go.kr/corona/index.do" title="새창열림" target="_blank">서대문구청</a></li>
+					<li><a href="https://www.nl.go.kr/" title="새창열림" target="_blank">국립중앙도서관 </a></li>
+					<li><a href="https://www.nanet.go.kr/main.do" title="새창열림" target="_blank">국회도서관 </a></li>
+					<li><a href="https://lib.seoul.go.kr/" title="새창열림" target="_blank">서울도서관 </a></li>
+					<li><a href="https://books.nl.go.kr/" title="새창열림" target="_blank">공공도서관지원서비스 </a></li>
+					<li><a href="https://cn.nld.go.kr/index.do" title="새창열림" target="_blank">책나래</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div class="faddWrap">
+		<div class="footerInner clearfix">
+			<div class="fAdd">
+				<cite>Copyright (C) 2022 by 서대문구립도서관. <br class="webHide">All right reserved.</cite>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<p id="post-result"></p>
+	</div>
+</footer>
+<a href="#body" id="btnTopScroll" title="상단으로 이동"><p><span>TOP</span></p></a>
+<!-- //footer -->
+<input type="hidden" name="pbInitNo1" id="pbInitNo1" value="" />
+<input type="hidden" name="pbInitNo2" id="pbInitNo2" value="" />
+<input type="hidden" name="pbInitNo3" id="pbInitNo3" value="" />
+<input type="hidden" name="pbInitNo4" id="pbInitNo4" value="" />
+<input type="hidden" name="pbInitNo5" id="pbInitNo5" value="" />
+<iframe name="hiddenFrame" id="hiddenFrame" title="빈프레임" style="display:none;"></iframe>
+<script>
+	// 관련사이트 바로가기
+	$(function(){
+		$(".familySite > a").on("click", function(){
+			var $dropdownNav = $(this).siblings("ul");
+			if($dropdownNav.css("display") == "none"){
+				$(".dropdown > ul").hide();
+				$dropdownNav.slideDown();
+			}else{
+				$dropdownNav.slideUp();
+			}
+			return false;
+		});
+	});
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-96845699-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-59148253-1', 'auto');
+ga('send', 'pageview');
+</script>
+</div>
+<!-- //wrap -->
+</body>
+</html>

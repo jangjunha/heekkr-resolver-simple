@@ -462,7 +462,68 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                     )
         logger.warning("Cannot parse loan status")
 
-    REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명")
+    def parse_requests_available_type_b(self, root: Tag) -> bool:
+        for elem in root.select(".bookBtnWrap a"):
+            if onclick := elem.attrs.get("onclick"):
+                if "fnLoanReservationApplyProc" in onclick:
+                    return True
+        return False
+
+    def parse_loan_status_type_b(self, root: Tag) -> tuple[int | None, DateTime | None]:
+        waitings = due = None
+        if elem := root.select_one(".bookData .book_info.info04"):
+            children = elem.find_all("span", recursive=False)
+            if len(children) >= 1:
+                if m := self.REQUESTS_PATTERN.search(children[0].text):
+                    waitings = int(m.group(1))
+            if len(children) >= 2:
+                if m := self.DUE_PATTERN.search(children[1].text):
+                    due = DateTime(
+                        date=Date(
+                            year=int(m.group(1)),
+                            month=int(m.group(2)),
+                            day=int(m.group(3)),
+                        )
+                    )
+        return waitings, due
+
+    def parse_holding_status_type_b(self, root: Tag) -> HoldingStatus | None:
+        if elem := root.select_one(".bookData .status"):
+            text = elem.text.strip()
+            if m := self.STATUS_PATTERN_TYPE_B.search(text):
+                status_text = m.group(1)
+                detail = m.group(2).strip("[]()")
+                requests_available = self.parse_requests_available_type_b(root)
+                waitings, due = self.parse_loan_status_type_b(root)
+                if status_text == "대출가능":
+                    return HoldingStatus(
+                        available=AvailableStatus(detail=detail),
+                        is_requested=waitings > 0 if waitings else False,
+                        requests=waitings,
+                        requests_available=requests_available,
+                    )
+                elif status_text == "대출불가":
+                    if detail == "대출중":
+                        return HoldingStatus(
+                            on_loan=OnLoanStatus(due=due),
+                            is_requested=waitings > 0 if waitings else False,
+                            requests=waitings,
+                            requests_available=requests_available,
+                        )
+                    else:
+                        return HoldingStatus(
+                            unavailable=UnavailableStatus(detail=detail),
+                            is_requested=detail == "대출예약중",
+                            requests=waitings,
+                            requests_available=requests_available,
+                        )
+                else:
+                    return HoldingStatus(
+                        unavailable=UnavailableStatus(detail=detail),
+                    )
+        logger.warning("Cannot parse status")
+
+    REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명?\s*(?:\/\s*(\d+)명?)?")
     DUE_PATTERN = re.compile(r"반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})")
     URL_PATTERN = re.compile(
         r"(?:fnSearchResultDetail|fnSearchDetailView)\("
@@ -473,3 +534,4 @@ class JnetSearcher(metaclass=abc.ABCMeta):
         r"\'([\w\d]+)\'"
         r"\)"
     )
+    STATUS_PATTERN_TYPE_B = re.compile(r"(\w+)\s*(\([\w\d\s]+\))?")
