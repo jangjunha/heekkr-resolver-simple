@@ -53,22 +53,6 @@ class Resolver(ResolverServicer):
             async for entity in streamer:
                 yield SearchResponse(entities=[entity])
 
-        # for name, service in services.items():
-        #     if name in service_ids:
-        #         yield SearchResponse(
-        #             entities=[
-        #                 entity
-        #                 async for entity in service.search(
-        #                     request.term,
-        #                     (
-        #                         library_id
-        #                         for library_id in library_ids
-        #                         if library_id.startswith(f"{name}:")
-        #                     ),
-        #                 )
-        #             ]
-        #         )
-
 
 def convert_library(lib: ServiceLibrary) -> Library:
     return Library(
