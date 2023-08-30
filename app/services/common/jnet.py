@@ -120,7 +120,7 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                     )
         return res
 
-    @cached(ttl=60 * 60 * 24)
+    @cached(ttl=60 * 60 * 24, alias="default")
     async def get_libraries(self) -> list[Library]:
         return await self._get_libraries()
 
@@ -522,6 +522,10 @@ class JnetSearcher(metaclass=abc.ABCMeta):
                         unavailable=UnavailableStatus(detail=detail),
                     )
         logger.warning("Cannot parse status")
+
+    def __repr__(self):
+        cls = self.__class__
+        return f"{cls.__module__}.{cls.__name__}"
 
     REQUESTS_PATTERN = re.compile(r"예약[\:\s]*(\d+)명?\s*(?:\/\s*(\d+)명?)?")
     DUE_PATTERN = re.compile(r"반납예정일[\:\s]*(\d{4})\.(\d{2})\.(\d{2})")

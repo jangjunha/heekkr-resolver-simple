@@ -1,7 +1,25 @@
+# ruff: noqa: E402
+
 import asyncio
+import os
 from typing import AsyncIterable
 
+from aiocache import caches
 from aiostream import stream
+
+
+def resolve_cache_config():
+    if bucket_name := os.environ.get("GCS_CACHE_BUCKET", None):
+        return {
+            "cache": "app.utils.cache.GcsCache",
+            "bucket_name": bucket_name,
+        }
+    else:
+        return {"cache": "aiocache.SimpleMemoryCache"}
+
+
+caches.set_config({"default": resolve_cache_config()})
+
 
 from heekkr.common_pb2 import LatLng
 from heekkr.resolver_pb2 import (
