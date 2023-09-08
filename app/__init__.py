@@ -1,6 +1,7 @@
 # ruff: noqa: E402
 
 import asyncio
+import logging
 import os
 from typing import AsyncIterable
 
@@ -34,18 +35,24 @@ from heekkr.resolver_pb2_grpc import ResolverServicer
 from .core import Library as ServiceLibrary, services
 
 
+logger = logging.getLogger(__name__)
+
+
 class Resolver(ResolverServicer):
     async def GetLibraries(
         self, request: GetLibrariesRequest, context
     ) -> GetLibrariesResponse:
+        logger.debug("GetLibraries begin")
+        libraries = [
+            convert_library(library)
+            for libraries in await asyncio.gather(
+                *(service.get_libraries() for _, service in services.items())
+            )
+            for library in libraries
+        ]
+        logger.debug(f"GetLibraries end {len(libraries)=}")
         return GetLibrariesResponse(
-            libraries=[
-                convert_library(library)
-                for libraries in await asyncio.gather(
-                    *(service.get_libraries() for _, service in services.items())
-                )
-                for library in libraries
-            ]
+            libraries=libraries,
         )
 
     async def Search(

@@ -122,8 +122,10 @@ class JnetSearcher(metaclass=abc.ABCMeta):
 
     @cached(ttl=60 * 60 * 24, alias="default")
     async def get_libraries(self) -> list[Library]:
-        logger.debug(f"{self.id_prefix} get_libraries")
-        return await self._get_libraries()
+        logger.debug(f"{self.id_prefix} get_libraries BEGIN")
+        libraries = await self._get_libraries()
+        logger.debug(f"{self.id_prefix} get_libraries END {len(libraries)=}")
+        return libraries
 
     async def map_library_to_searchkey(self, library_id: str) -> str:
         return library_id.removeprefix(self.id_prefix)
