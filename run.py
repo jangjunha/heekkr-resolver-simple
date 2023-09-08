@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import concurrent.futures
+import logging
 
 from grpc.aio import server as create_grpc_server
 from heekkr.resolver_pb2_grpc import add_ResolverServicer_to_server
@@ -22,6 +23,7 @@ async def serve(bind: str):
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     args = parser.parse_args()
     asyncio.run(serve(args.bind))
 

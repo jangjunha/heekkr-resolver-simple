@@ -1,8 +1,12 @@
 import dataclasses
 import contextlib
+import logging
 import os
 
 from aiohttp import ClientSession
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -23,6 +27,7 @@ class Kakao(contextlib.AsyncContextDecorator):
         if not self.session:
             return None
 
+        logger.debug(f"search_address {query}")
         async with self.session.get(
             "https://dapi.kakao.com/v2/local/search/address.json",
             params={
@@ -47,6 +52,7 @@ class Kakao(contextlib.AsyncContextDecorator):
         if not self.session:
             return None
 
+        logger.debug(f"search_keyword {keyword}")
         async with self.session.get(
             "https://dapi.kakao.com/v2/local/search/keyword.json",
             params={
