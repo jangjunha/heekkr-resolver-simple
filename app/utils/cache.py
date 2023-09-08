@@ -53,7 +53,7 @@ class SimpleGcsBackend(BaseCache):
             blob.upload_from_file(f)
         return True
 
-    async def _set(self, key, value, ttl, _cas_token=None, _conn=None):
+    async def _set(self, key, value, ttl=None, _cas_token=None, _conn=None):
         entity = CacheEntity(
             value=value,
             expires_at=datetime.datetime.utcnow() + datetime.timedelta(seconds=ttl)
