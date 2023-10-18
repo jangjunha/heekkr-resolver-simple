@@ -1,9 +1,11 @@
 import argparse
 import asyncio
 import concurrent.futures
+import os
 
 from grpc.aio import server as create_grpc_server
 from heekkr.resolver_pb2_grpc import add_ResolverServicer_to_server
+from sentry_sdk import init as init_sentry
 
 from app import Resolver
 
@@ -23,6 +25,14 @@ async def serve(bind: str):
 
 def main():
     args = parser.parse_args()
+
+    if dsn := os.environ.get("SENTRY_DSN"):
+        init_sentry(
+            dsn=dsn,
+            traces_sample_rate=1.0,
+            profiles_sample_rate=0.05,
+        )
+
     asyncio.run(serve(args.bind))
 
 
