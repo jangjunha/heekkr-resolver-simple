@@ -39,6 +39,13 @@ class Kakao(contextlib.AsyncContextDecorator):
         ) as response:
             res = await response.json()
 
+            if response.status != 200:
+                logger.error(
+                    f"Request failed with {response.status}",
+                    extra={"response": response, "body": res},
+                )
+                return
+
         if res["meta"]["total_count"] < 1:
             return
 
