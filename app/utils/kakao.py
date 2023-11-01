@@ -3,6 +3,7 @@ import contextlib
 import logging
 import os
 
+from aiocache import cached
 from aiohttp import ClientSession
 
 
@@ -23,6 +24,7 @@ class Kakao(contextlib.AsyncContextDecorator):
             ClientSession(headers={"Authorization": f"KakaoAK {key}"}) if key else None
         )
 
+    @cached(ttl=60 * 60 * 24 * 30, alias="default")
     async def search_address(self, query: str) -> Address | None:
         if not self.session:
             return None
@@ -55,6 +57,7 @@ class Kakao(contextlib.AsyncContextDecorator):
             y=float(doc["y"]),
         )
 
+    @cached(ttl=60 * 60 * 24 * 30, alias="default")
     async def search_keyword(self, keyword: str) -> Address | None:
         if not self.session:
             return None
